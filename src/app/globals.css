@@ -147,10 +147,24 @@
     background-color: var(--color-concrete);
     color: var(--color-stencil);
     -webkit-font-smoothing: antialiased;
+    /* Added to the home screen this runs as an app: no rubber-band past the
+       list, no grey flash under a thumb, no double-tap zoom on a tap target,
+       and text that keeps its size when the phone turns. */
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   body {
     background-color: var(--color-concrete);
     color: var(--color-stencil);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  /* Chrome and labels are app furniture; a long press should not start a
+     selection. Item names, counts and notes stay selectable. */
+  button, a, label, [role="button"], nav {
+    -webkit-user-select: none;
+    user-select: none;
   }
   h1, h2, h3 {
     font-family: var(--font-display);

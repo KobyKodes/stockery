@@ -32,6 +32,11 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
+// The manifest and every icon it names stay public: a phone fetches them
+// before anyone signs in, and an icon redirected to /login installs as a blank
+// square on the home screen.
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest).*)"],
+  matcher: [
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icons/|manifest.webmanifest).*)",
+  ],
 };

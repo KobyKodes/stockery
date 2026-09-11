@@ -44,6 +44,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { default: name, template: `%s | ${name}` },
     description: t("meta.description"),
+    applicationName: name,
+    // Added to the home screen, it opens without browser chrome and titles
+    // itself "Stockery" rather than the page it happens to be on.
+    appleWebApp: { capable: true, title: name, statusBarStyle: "default" },
+    // Codes and pack counts are numbers, not phone numbers; iOS must not turn
+    // them into call links.
+    formatDetection: { telephone: false },
   };
 }
 
