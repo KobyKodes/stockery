@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { ZodError, type ZodType } from "zod";
 import { auth } from "@/auth";
+import { msg, resolveMessage } from "@/lib/i18n/message";
+import { getT } from "@/lib/i18n/server";
 
 // Small helpers shared by every route handler: auth, body validation, and
 // consistent error shapes. Errors say what happened in plain words.
@@ -8,7 +10,10 @@ import { auth } from "@/auth";
 export class ApiError extends Error {
   constructor(
     public status: number,
+    /** Either a sentence or a token from `msg()`, resolved by `handle`. */
     message: string,
+    /** The field the message is about, when a schema names one. */
+    public field?: string,
   ) {
     super(message);
   }
@@ -16,7 +21,7 @@ export class ApiError extends Error {
 
 export async function requireSession() {
   const session = await auth();
-  if (!session) throw new ApiError(401, "Sign in to continue.");
+  if (!session) throw new ApiError(401, msg("error.signIn"));
   return session;
 }
 
@@ -25,13 +30,13 @@ export async function parseBody<T>(request: Request, schema: ZodType<T>): Promis
   try {
     raw = await request.json();
   } catch {
-    throw new ApiError(400, "The request body isn't valid JSON.");
+    throw new ApiError(400, msg("error.badJson"));
   }
   const result = schema.safeParse(raw);
   if (!result.success) {
     const first = result.error.issues[0];
-    const where = first?.path.length ? `${first.path.join(".")}: ` : "";
-    throw new ApiError(400, `${where}${first?.message ?? "Invalid request."}`);
+    const where = first?.path.length ? first.path.join(".") : undefined;
+    throw new ApiError(400, first?.message ?? msg("error.invalidRequest"), where);
   }
   return result.data;
 }
@@ -41,12 +46,18 @@ export function parseQuery<T>(url: URL, schema: ZodType<T>): T {
   const result = schema.safeParse(raw);
   if (!result.success) {
     const first = result.error.issues[0];
-    throw new ApiError(400, first?.message ?? "Invalid query.");
+    throw new ApiError(400, first?.message ?? msg("error.invalidQuery"));
   }
   return result.data;
 }
 
-/** Wraps a handler so thrown ApiErrors and Zod errors become JSON responses. */
+/**
+ * Wraps a handler so thrown ApiErrors and Zod errors become JSON responses.
+ *
+ * This is where a message token becomes a sentence: the request carries the
+ * caller's language cookie, so the error comes back already written in it and
+ * the browser can show it as-is.
+ */
 export function handle<Ctx>(fn: (request: Request, ctx: Ctx) => Promise<Response>) {
   return async (request: Request, ctx: Ctx): Promise<Response> => {
     try {
@@ -54,13 +65,24 @@ export function handle<Ctx>(fn: (request: Request, ctx: Ctx) => Promise<Response
       return await fn(request, ctx);
     } catch (err) {
       if (err instanceof ApiError) {
-        return NextResponse.json({ error: err.message }, { status: err.status });
+        const t = await getT();
+        const text = resolveMessage(err.message, t);
+        return NextResponse.json(
+          { error: err.field ? `${err.field}: ${text}` : text },
+          { status: err.status },
+        );
       }
       if (err instanceof ZodError) {
-        return NextResponse.json({ error: err.issues[0]?.message ?? "Invalid request." }, { status: 400 });
+        const t = await getT();
+        const first = err.issues[0]?.message;
+        return NextResponse.json(
+          { error: first ? resolveMessage(first, t) : t("error.invalidRequest") },
+          { status: 400 },
+        );
       }
       console.error(err);
-      return NextResponse.json({ error: "Something went wrong on the server. Try again." }, { status: 500 });
+      const t = await getT();
+      return NextResponse.json({ error: t("error.server") }, { status: 500 });
     }
   };
 }

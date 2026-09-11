@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Barlow_Condensed } from "next/font/google";
+import { Barlow, Barlow_Condensed, Cairo, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { dirOf } from "@/lib/i18n/config";
+import { LocaleProvider } from "@/lib/i18n/client";
+import { getI18n } from "@/lib/i18n/server";
 import { THEME_COLOR } from "@/lib/theme";
 import "./globals.css";
 
@@ -17,10 +20,32 @@ const barlowCondensed = Barlow_Condensed({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: { default: "Stockery", template: "%s | Stockery" },
-  description: "Storeroom stock for a working kitchen.",
-};
+// Barlow carries no Arabic glyphs, so these sit behind it in the same stack:
+// the browser falls through per glyph and each script keeps its own face.
+// Plex Arabic answers Barlow for running text; Cairo's bold answers the
+// condensed display face in headings and numerals.
+const plexArabic = IBM_Plex_Sans_Arabic({
+  variable: "--font-plex-arabic",
+  subsets: ["arabic"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+});
+
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+});
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  const name = "Stockery";
+  return {
+    title: { default: name, template: `%s | ${name}` },
+    description: t("meta.description"),
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: THEME_COLOR,
@@ -28,13 +53,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const { locale } = await getI18n();
+
   return (
     <html
-      lang="en"
-      className={`${barlow.variable} ${barlowCondensed.variable} h-full`}
+      lang={locale}
+      dir={dirOf(locale)}
+      className={`${barlow.variable} ${barlowCondensed.variable} ${plexArabic.variable} ${cairo.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }

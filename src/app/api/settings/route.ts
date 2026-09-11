@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { handle, parseBody } from "@/lib/api";
 import { getTakePresets, setTakePresets } from "@/lib/settings";
+import { msg } from "@/lib/i18n/message";
 
 const settingsPatch = z.object({
-  takePresets: z.array(z.number().int().min(1, "Presets must be 1 or more.")).min(1, "Keep at least one preset.").max(6),
+  takePresets: z.array(z.number().int().min(1, msg("error.presetMin"))).min(1, msg("error.presetKeepOne")).max(6),
 });
 
 export const GET = handle(async () => {

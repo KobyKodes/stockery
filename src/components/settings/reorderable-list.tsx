@@ -2,6 +2,7 @@
 
 import { useState, type DragEvent } from "react";
 import { GripVertical } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 export type Reorderable = { id: string; name: string };
@@ -16,6 +17,7 @@ type Props<T extends Reorderable> = {
 // Drag to reorder, with keyboard moves for anyone not using a pointer.
 // Reordering is committed by the caller as soon as a row lands.
 export function ReorderableList<T extends Reorderable>({ items, onReorder, renderRow, label }: Props<T>) {
+  const t = useT();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -79,7 +81,7 @@ export function ReorderableList<T extends Reorderable>({ items, onReorder, rende
                 nudge(item.id, 1);
               }
             }}
-            aria-label={`Move ${item.name}. Use the arrow keys.`}
+            aria-label={t("nameList.moveAria", { name: item.name })}
             className="flex size-tap shrink-0 cursor-grab items-center justify-center text-stencil-muted"
           >
             <GripVertical aria-hidden className="size-5" />

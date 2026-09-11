@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { handle, parseBody, parseQuery } from "@/lib/api";
-import { itemSelect, listItems, toItemRow } from "@/lib/items";
+import { assertAssignableLocation, itemSelect, listItems, toItemRow } from "@/lib/items";
 import { prisma } from "@/lib/prisma";
 import { syncReorderEntry } from "@/lib/reorder";
 import { itemInput, listQuery } from "@/lib/validation";
+import { msg } from "@/lib/i18n/message";
 
 export const GET = handle(async (request) => {
   const query = parseQuery(new URL(request.url), listQuery);
@@ -13,6 +14,7 @@ export const GET = handle(async (request) => {
 
 export const POST = handle(async (request) => {
   const input = await parseBody(request, itemInput);
+  await assertAssignableLocation(input.locationId ?? null);
   const last = await prisma.item.findFirst({
     where: { locationId: input.locationId ?? null },
     orderBy: { sortOrder: "desc" },
@@ -33,7 +35,7 @@ export const POST = handle(async (request) => {
         threshold: input.threshold,
         sortOrder: (last?.sortOrder ?? -1) + 1,
         movements: {
-          create: { type: "COUNT", delta: input.quantity, quantityAfter: input.quantity, note: "Added to the storeroom" },
+          create: { type: "COUNT", delta: input.quantity, quantityAfter: input.quantity, note: msg("note.added") },
         },
       },
       select: itemSelect,

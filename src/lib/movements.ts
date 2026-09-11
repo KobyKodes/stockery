@@ -5,6 +5,7 @@ import { itemSelect, toItemRow, type ItemRow } from "@/lib/items";
 import { prisma } from "@/lib/prisma";
 import { syncReorderEntry } from "@/lib/reorder";
 import { applyTake, canUndo } from "@/lib/stock";
+import { msg } from "@/lib/i18n/message";
 
 // Every change to a quantity goes through here so it always leaves a
 // movement behind and keeps the reorder list in step.
@@ -32,7 +33,7 @@ function toMovementRow(m: { id: string; type: MovementType; delta: number; quant
 
 async function loadQuantity(itemId: string) {
   const item = await prisma.item.findUnique({ where: { id: itemId }, select: { quantity: true, archived: true } });
-  if (!item) throw new ApiError(404, "That item isn't in the storeroom.");
+  if (!item) throw new ApiError(404, msg("error.itemMissing"));
   return item;
 }
 
@@ -76,14 +77,14 @@ export async function countStock(itemId: string, counted: number): Promise<Movem
 /** Reverses a movement with an ADJUST. Only the latest movement, only within the window. */
 export async function undoMovement(movementId: string): Promise<MovementResult> {
   const movement = await prisma.stockMovement.findUnique({ where: { id: movementId } });
-  if (!movement) throw new ApiError(404, "That change can't be found.");
+  if (!movement) throw new ApiError(404, msg("error.movementMissing"));
   const latest = await prisma.stockMovement.findFirst({
     where: { itemId: movement.itemId },
     orderBy: { createdAt: "desc" },
     select: { id: true },
   });
   if (!canUndo(movement, latest?.id === movement.id)) {
-    throw new ApiError(409, "That change can't be undone any more.");
+    throw new ApiError(409, msg("error.undoExpired"));
   }
   const { item, movement: adjust } = await record(movement.itemId, "ADJUST", -movement.delta, "Undo");
   return { item, movement: adjust, applied: -movement.delta, clamped: false };

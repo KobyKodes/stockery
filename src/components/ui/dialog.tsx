@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 // Dialogs sit on paper with the one shadow value. They fade in on open
 // (a user action) and never zoom or bounce.
@@ -44,6 +45,7 @@ function DialogContent({
   showCloseButton = true,
   ...props
 }: DialogPrimitive.Popup.Props & { showCloseButton?: boolean }) {
+  const t = useT();
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -59,10 +61,10 @@ function DialogContent({
         {showCloseButton ? (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            render={<Button variant="ghost" size="icon-sm" className="absolute top-2 right-2" />}
+            render={<Button variant="ghost" size="icon-sm" className="absolute top-2 end-2" />}
           >
             <XIcon aria-hidden />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t("common.close")}</span>
           </DialogPrimitive.Close>
         ) : null}
       </DialogPrimitive.Popup>
@@ -71,7 +73,7 @@ function DialogContent({
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="dialog-header" className={cn("flex flex-col gap-2 pr-8", className)} {...props} />;
+  return <div data-slot="dialog-header" className={cn("flex flex-col gap-2 pe-8", className)} {...props} />;
 }
 
 function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {

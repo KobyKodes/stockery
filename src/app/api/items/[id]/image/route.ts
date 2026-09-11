@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ApiError, handle, type RouteContext } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { msg } from "@/lib/i18n/message";
 
 type Ctx = RouteContext<{ id: string }>;
 
@@ -17,7 +18,7 @@ export const GET = handle<Ctx>(async (request, { params }) => {
     where: { id },
     select: { image: true, imageType: true, updatedAt: true },
   });
-  if (!item?.image || !item.imageType) throw new ApiError(404, "This item has no photo.");
+  if (!item?.image || !item.imageType) throw new ApiError(404, msg("error.noPhoto"));
 
   const etag = etagFor(item.updatedAt);
   const headers = {
@@ -35,9 +36,9 @@ export const PUT = handle<Ctx>(async (request, { params }) => {
   const { id } = await params;
   const form = await request.formData().catch(() => null);
   const file = form?.get("image");
-  if (!(file instanceof File)) throw new ApiError(400, "Choose a photo to upload.");
-  if (!ALLOWED.includes(file.type)) throw new ApiError(400, "The photo must be a JPEG, PNG or WebP.");
-  if (file.size > MAX_BYTES) throw new ApiError(400, "The photo must be under 2 MB.");
+  if (!(file instanceof File)) throw new ApiError(400, msg("error.choosePhoto"));
+  if (!ALLOWED.includes(file.type)) throw new ApiError(400, msg("error.photoType"));
+  if (file.size > MAX_BYTES) throw new ApiError(400, msg("error.photoSize"));
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   const item = await prisma.item.update({

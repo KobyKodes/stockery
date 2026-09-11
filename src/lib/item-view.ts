@@ -19,26 +19,60 @@ export type ItemRow = {
   createdAt: string;
   status: StockStatus;
   category: { id: string; name: string; sortOrder: number } | null;
-  location: { id: string; name: string; sortOrder: number } | null;
+  location: { id: string; name: string; sortOrder: number; parentName: string | null } | null;
 };
 
-export type LocationGroup = {
+/**
+ * "Store 2 › Shelf A" when a location sits inside a store, else just its name.
+ *
+ * The chevron stays the same character in both languages: rendered inside a
+ * <bdi>, it takes the direction of the names around it, so it points the way
+ * that pair of names is read whatever script they are in.
+ */
+export function locationLabel(location: ItemRow["location"]): string | null {
+  if (!location) return null;
+  return location.parentName ? `${location.parentName} › ${location.name}` : location.name;
+}
+
+export type ItemGroup = {
   key: string;
   name: string;
   items: ItemRow[];
 };
 
+/** @deprecated kept for reference; the storeroom list groups by category. */
+export type LocationGroup = ItemGroup;
+
 /** Groups a walk-ordered list by location, with a final "Unassigned" group. */
-export function groupByLocation(items: ItemRow[]): LocationGroup[] {
-  const groups = new Map<string, LocationGroup>();
+export function groupByLocation(items: ItemRow[], unassignedLabel = "Unassigned"): ItemGroup[] {
+  const groups = new Map<string, ItemGroup>();
   for (const item of items) {
     const key = item.location?.id ?? "none";
-    const name = item.location?.name ?? "Unassigned";
+    const name = item.location?.name ?? unassignedLabel;
     const group = groups.get(key) ?? { key, name, items: [] };
     group.items.push(item);
     groups.set(key, group);
   }
   return [...groups.values()];
+}
+
+/**
+ * Groups items by category, ordered by the category's own sortOrder, with a
+ * final "Uncategorized" group. Item order within a group is preserved.
+ */
+export function groupByCategory(items: ItemRow[], uncategorizedLabel = "Uncategorized"): ItemGroup[] {
+  const groups = new Map<string, ItemGroup & { sortOrder: number }>();
+  for (const item of items) {
+    const key = item.category?.id ?? "none";
+    const name = item.category?.name ?? uncategorizedLabel;
+    const sortOrder = item.category?.sortOrder ?? Number.POSITIVE_INFINITY;
+    const group = groups.get(key) ?? { key, name, sortOrder, items: [] };
+    group.items.push(item);
+    groups.set(key, group);
+  }
+  return [...groups.values()]
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .map((group) => ({ key: group.key, name: group.name, items: group.items }));
 }
 
 /** Out first, then low, then by name. */

@@ -4,6 +4,7 @@ import { listReorder } from "@/lib/reorder";
 import { prisma } from "@/lib/prisma";
 import { suggestedReorderQty } from "@/lib/stock";
 import { reorderAddBody } from "@/lib/validation";
+import { msg } from "@/lib/i18n/message";
 
 export const GET = handle(async () => {
   return NextResponse.json({ entries: await listReorder() });
@@ -16,8 +17,8 @@ export const POST = handle(async (request) => {
     where: { id: itemId },
     select: { quantity: true, threshold: true, packSize: true, reorder: { select: { id: true } } },
   });
-  if (!item) throw new ApiError(404, "That item isn't in the storeroom.");
-  if (item.reorder) throw new ApiError(409, "That item is already on the list.");
+  if (!item) throw new ApiError(404, msg("error.itemMissing"));
+  if (item.reorder) throw new ApiError(409, msg("error.alreadyOnList"));
 
   await prisma.reorderEntry.create({
     data: { itemId, requestedQty: requestedQty ?? suggestedReorderQty(item), addedAuto: false },

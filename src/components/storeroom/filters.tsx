@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import type { Option } from "@/components/creatable-select";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -18,6 +19,7 @@ export function Filters({ locations, categories }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const t = useT();
   const q = params.get("q") ?? "";
   const location = params.get("location") ?? "";
   const category = params.get("category") ?? "";
@@ -43,8 +45,8 @@ export function Filters({ locations, categories }: Props) {
 
   useEffect(() => {
     if (search === q) return;
-    const t = setTimeout(() => update({ q: search }), 250);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => update({ q: search }), 250);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
@@ -52,34 +54,34 @@ export function Filters({ locations, categories }: Props) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-stencil-muted" />
+          <Search aria-hidden className="pointer-events-none absolute top-1/2 start-3 size-5 -translate-y-1/2 text-stencil-muted" />
           <Input
             type="search"
             inputMode="search"
             name="q"
-            aria-label="Search items"
-            placeholder="Search items"
-            className="pl-10"
+            aria-label={t("filters.search")}
+            placeholder={t("filters.search")}
+            className="ps-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <NativeSelect
           name="location"
-          aria-label="Location"
+          aria-label={t("filters.location")}
           className="sm:w-56"
           value={location}
           onChange={(e) => update({ location: e.target.value })}
         >
-          <option value="">All locations</option>
+          <option value="">{t("filters.allLocations")}</option>
           {locations.map((l) => (
             <option key={l.id} value={l.id}>
               {l.name}
             </option>
           ))}
-          <option value="none">Unassigned</option>
+          <option value="none">{t("common.unassigned")}</option>
         </NativeSelect>
-        <div role="group" aria-label="Stock status" className="flex h-tap shrink-0 rounded-control border border-stencil">
+        <div role="group" aria-label={t("filters.status")} className="flex h-tap shrink-0 rounded-control border border-stencil">
           {(["all", "low", "out"] as const).map((s) => (
             <button
               key={s}
@@ -91,14 +93,14 @@ export function Filters({ locations, categories }: Props) {
                 status === s ? "bg-stencil text-paper" : "text-stencil",
               )}
             >
-              {s === "all" ? "All" : s === "low" ? "Low" : "Out"}
+              {s === "all" ? t("filters.statusAll") : s === "low" ? t("filters.statusLow") : t("filters.statusOut")}
             </button>
           ))}
         </div>
       </div>
-      <div role="group" aria-label="Category" className="flex gap-2 overflow-x-auto no-scrollbar">
+      <div role="group" aria-label={t("filters.category")} className="flex gap-2 overflow-x-auto no-scrollbar">
         <Chip active={!category} onClick={() => update({ category: "" })}>
-          All categories
+          {t("filters.allCategories")}
         </Chip>
         {categories.map((c) => (
           <Chip key={c.id} active={category === c.id} onClick={() => update({ category: c.id })}>

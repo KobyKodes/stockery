@@ -7,11 +7,13 @@ import { useToast } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/fetcher";
+import { useT } from "@/lib/i18n/client";
 import { MAX_PRESETS, normalisePresets } from "@/lib/presets";
 
 // The quick buttons in the take sheet. Small whole numbers, at most six.
 export function PresetEditor({ presets: initial }: { presets: number[] }) {
   const { toast } = useToast();
+  const t = useT();
   const [presets, setPresets] = useState(initial);
   const [adding, setAdding] = useState("");
   const [busy, setBusy] = useState(false);
@@ -28,9 +30,9 @@ export function PresetEditor({ presets: initial }: { presets: number[] }) {
         body: { takePresets: clean },
       });
       setPresets(result.takePresets);
-      toast("Saved");
+      toast(t("common.saved"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The presets didn't save.");
+      setError(e instanceof Error ? e.message : t("presets.saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -41,12 +43,12 @@ export function PresetEditor({ presets: initial }: { presets: number[] }) {
       <ul className="flex flex-wrap gap-2">
         {presets.map((n) => (
           <li key={n}>
-            <span className="flex h-tap items-center gap-2 rounded-control border border-stencil pl-4 pr-2 text-base font-semibold tabular">
+            <span className="flex h-tap items-center gap-2 rounded-control border border-stencil ps-4 pe-2 text-base font-semibold tabular">
               {n}
               <Button
                 size="icon-sm"
                 variant="ghost"
-                aria-label={`Remove the ${n} preset`}
+                aria-label={t("presets.removeAria", { count: n })}
                 disabled={busy || presets.length === 1}
                 onClick={() => void save(presets.filter((p) => p !== n))}
               >
@@ -73,22 +75,20 @@ export function PresetEditor({ presets: initial }: { presets: number[] }) {
           min={1}
           step={1}
           className="w-28"
-          aria-label="New preset amount"
-          placeholder="Amount"
+          aria-label={t("presets.newAria")}
+          placeholder={t("common.amount")}
           value={adding}
           onChange={(e) => setAdding(e.target.value)}
         />
         <Button type="submit" disabled={busy || !online || presets.length >= MAX_PRESETS || !adding.trim()}>
-          Add preset
+          {t("presets.addButton")}
         </Button>
       </form>
 
-      <p className="text-xs text-stencil-muted">
-        Up to {MAX_PRESETS} amounts. They appear as one-tap buttons in the take sheet, alongside a whole pack where an item has one.
-      </p>
+      <p className="text-xs text-stencil-muted">{t("presets.note", { max: MAX_PRESETS })}</p>
 
       {error ? (
-        <p role="alert" className="border-l-[3px] border-bay-red pl-3 text-base">
+        <p role="alert" className="border-s-[3px] border-bay-red ps-3 text-base">
           {error}
         </p>
       ) : null}

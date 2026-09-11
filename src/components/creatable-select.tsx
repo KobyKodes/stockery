@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { api } from "@/lib/fetcher";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n/en";
 
 export type Option = { id: string; name: string };
 
@@ -15,12 +17,15 @@ type Props = {
   onChange: (id: string | null) => void;
   onCreated: (option: Option) => void;
   createUrl: string;
-  noun: string; // "location", "category"
+  /** Which editable list this select creates into. */
+  kind: "location" | "category";
 };
 
 // A native select with one extra choice, "New {noun}", which reveals an input.
 // Creating posts straight away so the id exists before the item is saved.
-export function CreatableSelect({ id, value, options, onChange, onCreated, createUrl, noun }: Props) {
+export function CreatableSelect({ id, value, options, onChange, onCreated, createUrl, kind }: Props) {
+  const t = useT();
+  const noun = t(`noun.${kind}.one` as MessageKey);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,7 +42,7 @@ export function CreatableSelect({ id, value, options, onChange, onCreated, creat
       setCreating(false);
       setName("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't add it.");
+      setError(e instanceof Error ? e.message : t("creatable.addFailed"));
     } finally {
       setBusy(false);
     }
@@ -50,7 +55,7 @@ export function CreatableSelect({ id, value, options, onChange, onCreated, creat
           <Input
             id={id}
             value={name}
-            placeholder={`New ${noun} name`}
+            placeholder={t("creatable.newName", { noun })}
             autoFocus
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
@@ -62,14 +67,14 @@ export function CreatableSelect({ id, value, options, onChange, onCreated, creat
             }}
           />
           <Button type="button" variant="secondary" disabled={busy || !name.trim()} onClick={() => void create()}>
-            Add
+            {t("common.add")}
           </Button>
           <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         </div>
         {error ? (
-          <p role="alert" className="border-l-[3px] border-bay-red pl-3 text-xs">
+          <p role="alert" className="border-s-[3px] border-bay-red ps-3 text-xs">
             {error}
           </p>
         ) : null}
@@ -89,13 +94,13 @@ export function CreatableSelect({ id, value, options, onChange, onCreated, creat
         onChange(e.target.value || null);
       }}
     >
-      <option value="">None</option>
+      <option value="">{t("common.none")}</option>
       {options.map((o) => (
         <option key={o.id} value={o.id}>
           {o.name}
         </option>
       ))}
-      <option value="__new__">New {noun}</option>
+      <option value="__new__">{t("creatable.new", { noun })}</option>
     </NativeSelect>
   );
 }

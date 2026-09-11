@@ -52,8 +52,8 @@
   --color-ring: var(--color-steel);
 
   /* type */
-  --font-display: var(--font-barlow-condensed), "Barlow Condensed", "Arial Narrow", sans-serif;
-  --font-body: var(--font-barlow), "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-barlow-condensed), var(--font-cairo), "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: var(--font-barlow), var(--font-plex-arabic), "Barlow", "Helvetica Neue", Arial, sans-serif;
   --font-sans: var(--font-body);
   --font-heading: var(--font-display);
   --text-xs: 0.875rem;   /* 14 */
@@ -123,7 +123,7 @@
     to { transform: translateY(0); }
   }
   @keyframes panel-in {
-    from { transform: translateX(100%); }
+    from { transform: translateX(var(--panel-from, 100%)); }
     to { transform: translateX(0); }
   }
   @keyframes fade-in {
@@ -201,4 +201,24 @@
 
 @utility flash {
   animation: row-flash var(--duration-roll) var(--ease-out) both;
+}
+
+/*
+  Arabic. Direction itself is handled by dir="rtl" on <html> plus logical
+  utilities (ps-, me-, start-, text-start) in the components; only the three
+  things CSS cannot infer are set here.
+*/
+[dir="rtl"] {
+  /* The take panel is pinned to the inline end, so it enters from the left. */
+  --panel-from: -100%;
+}
+
+/* Arabic letters join up. Tracking meant for Latin caps would pull them apart. */
+[dir="rtl"] [class*="tracking-"] {
+  letter-spacing: 0;
+}
+
+/* Arabic has no uppercase, and the property would do nothing but cost a reflow. */
+[dir="rtl"] [class*="uppercase"] {
+  text-transform: none;
 }

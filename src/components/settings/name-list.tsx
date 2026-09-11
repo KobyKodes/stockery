@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/fetcher";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n/en";
 
 export type NamedRow = { id: string; name: string; sortOrder: number; itemCount: number };
 
@@ -23,15 +25,17 @@ type Props = {
   rows: NamedRow[];
   /** "/api/locations" or "/api/categories" */
   endpoint: string;
-  noun: string;
-  /** What happens to items when this is deleted. */
-  deleteNote: string;
+  /** Which list this is. The noun and the delete warning follow from it. */
+  kind: "location" | "category";
 };
 
 // Rename, reorder and delete for locations and categories. Both lists behave
-// the same way, so they share this component.
-export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
+// the same way, so they share this component. The noun appears in the middle
+// of six sentences, so it is looked up per language rather than passed in as
+// an English word.
+export function NameList({ rows: initial, endpoint, kind }: Props) {
   const { toast } = useToast();
+  const t = useT();
   const [rows, setRows] = useState(initial);
   const [adding, setAdding] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -40,6 +44,10 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
   const [busy, setBusy] = useState(false);
   const online = useOnline();
   const [error, setError] = useState("");
+
+  const singular = t(`noun.${kind}.one` as MessageKey);
+  const plural = t(`noun.${kind}.other` as MessageKey);
+  const deleteNote = t(kind === "location" ? "settings.deleteNoteLocation" : "settings.deleteNoteCategory");
 
   function fail(e: unknown, fallback: string) {
     setError(e instanceof Error ? e.message : fallback);
@@ -57,9 +65,9 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
       });
       setRows((r) => [...r, { ...created, itemCount: 0 }]);
       setAdding("");
-      toast(`Added ${created.name}`);
+      toast(t("nameList.addedToast", { name: created.name }));
     } catch (e) {
-      fail(e, `Couldn't add that ${noun}.`);
+      fail(e, t("nameList.addFailed", { singular }));
     } finally {
       setBusy(false);
     }
@@ -74,9 +82,9 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
       await api(`${endpoint}/${id}`, { method: "PATCH", body: { name } });
       setRows((r) => r.map((x) => (x.id === id ? { ...x, name } : x)));
       setEditingId(null);
-      toast("Saved");
+      toast(t("common.saved"));
     } catch (e) {
-      fail(e, "Couldn't rename that.");
+      fail(e, t("nameList.renameFailed"));
     } finally {
       setBusy(false);
     }
@@ -89,7 +97,7 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
     try {
       await Promise.all(next.map((r) => api(`${endpoint}/${r.id}`, { method: "PATCH", body: { sortOrder: r.sortOrder } })));
     } catch (e) {
-      fail(e, "The new order didn't save.");
+      fail(e, t("nameList.reorderFailed"));
     }
   }
 
@@ -100,9 +108,9 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
       await api(`${endpoint}/${row.id}`, { method: "DELETE" });
       setRows((r) => r.filter((x) => x.id !== row.id));
       setDeleting(null);
-      toast(`Deleted ${row.name}`);
+      toast(t("nameList.deletedToast", { name: row.name }));
     } catch (e) {
-      fail(e, "Couldn't delete that.");
+      fail(e, t("nameList.deleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -111,11 +119,11 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
   return (
     <div className="flex max-w-prose flex-col gap-4">
       {rows.length === 0 ? (
-        <p className="text-base text-stencil-muted">No {noun}s yet. Add the first one below.</p>
+        <p className="text-base text-stencil-muted">{t("nameList.empty", { plural })}</p>
       ) : (
         <ReorderableList
           items={rows}
-          label={`${noun}s in order`}
+          label={t("nameList.order", { plural })}
           onReorder={(ids) => void reorder(ids)}
           renderRow={(row) => (
             <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -124,7 +132,7 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
                   <Input
                     value={editingName}
                     autoFocus
-                    aria-label={`Rename ${row.name}`}
+                    aria-label={t("nameList.renameAria", { name: row.name })}
                     onChange={(e) => setEditingName(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -135,22 +143,24 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
                     }}
                   />
                   <Button size="sm" disabled={busy} onClick={() => void rename(row.id)}>
-                    Save
+                    {t("common.save")}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 </>
               ) : (
                 <>
-                  <span className="min-w-0 flex-1 truncate text-base font-semibold">{row.name}</span>
+                  <span className="min-w-0 flex-1 truncate text-base font-semibold">
+                    <bdi>{row.name}</bdi>
+                  </span>
                   <span className="shrink-0 text-xs text-stencil-muted tabular">
-                    {row.itemCount} {row.itemCount === 1 ? "item" : "items"}
+                    {t("common.itemCount", { count: row.itemCount })}
                   </span>
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    aria-label={`Rename ${row.name}`}
+                    aria-label={t("nameList.renameAria", { name: row.name })}
                     onClick={() => {
                       setEditingId(row.id);
                       setEditingName(row.name);
@@ -158,7 +168,12 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
                   >
                     <Pencil aria-hidden />
                   </Button>
-                  <Button size="icon-sm" variant="ghost" aria-label={`Delete ${row.name}`} onClick={() => setDeleting(row)}>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={t("nameList.deleteAria", { name: row.name })}
+                    onClick={() => setDeleting(row)}
+                  >
                     <Trash2 aria-hidden />
                   </Button>
                 </>
@@ -177,18 +192,18 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
       >
         <Input
           value={adding}
-          aria-label={`New ${noun} name`}
-          placeholder={`New ${noun}`}
+          aria-label={t("nameList.newAria", { singular })}
+          placeholder={t("nameList.newPlaceholder", { singular })}
           maxLength={40}
           onChange={(e) => setAdding(e.target.value)}
         />
         <Button type="submit" disabled={busy || !online || !adding.trim()}>
-          Add {noun}
+          {t("nameList.addButton", { singular })}
         </Button>
       </form>
 
       {error ? (
-        <p role="alert" className="border-l-[3px] border-bay-red pl-3 text-base">
+        <p role="alert" className="border-s-[3px] border-bay-red ps-3 text-base">
           {error}
         </p>
       ) : null}
@@ -196,15 +211,15 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
       <Dialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete {deleting?.name}?</DialogTitle>
+            <DialogTitle>{t("nameList.deleteTitle", { name: deleting?.name })}</DialogTitle>
             <DialogDescription>{deleteNote}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleting(null)}>
-              Keep it
+              {t("common.keepIt")}
             </Button>
             <Button variant="destructive" disabled={busy || !online} onClick={() => deleting && void remove(deleting)}>
-              Delete {deleting?.name}
+              {t("nameList.deleteConfirm", { name: deleting?.name })}
             </Button>
           </DialogFooter>
         </DialogContent>

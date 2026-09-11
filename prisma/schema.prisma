@@ -14,14 +14,24 @@ model Category {
   createdAt DateTime @default(now())
 }
 
-/// A physical place: "Shelf A", "Under sink", "Walk-in door". Drives the
-/// walk order during a full count, so sortOrder matters.
+/// A physical place. Locations nest one level: a store (no parent) can hold
+/// shelves (parent = the store). Items may only be assigned to a leaf - a
+/// store with no shelves, or a shelf. Drives the walk order during a full
+/// count, so sortOrder matters (within each set of siblings).
 model Location {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  sortOrder Int      @default(0)
+  id        String     @id @default(cuid())
+  name      String
+  sortOrder Int        @default(0)
+  parentId  String?
+  parent    Location?  @relation("LocationChildren", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Location[] @relation("LocationChildren")
   items     Item[]
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
+
+  // Names are unique among siblings, not globally: "Shelf A" can live under
+  // more than one store.
+  @@unique([parentId, name])
+  @@index([parentId, sortOrder])
 }
 
 model Item {

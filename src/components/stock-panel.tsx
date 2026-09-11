@@ -9,6 +9,7 @@ import { StockBar } from "@/components/stock-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/fetcher";
+import { useI18n } from "@/lib/i18n/client";
 import type { ItemRow } from "@/lib/item-view";
 import { pluralise } from "@/lib/stock";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ const UNDO_VISIBLE_MS = 10_000;
 // deliveries under the Receive tab.
 export function StockPanel({ item: initial, presets, onChange, showHeader = true, className }: Props) {
   const router = useRouter();
+  const { locale, t } = useI18n();
   const [item, setItem] = useState(initial);
   const [lastInitial, setLastInitial] = useState(initial);
   if (initial !== lastInitial) {
@@ -61,6 +63,8 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
 
   const hasPacks = !!item.packSize && item.packSize > 1 && !!item.packName;
   const packSize = hasPacks ? item.packSize! : 1;
+  // Full packs currently in stock, e.g. 15 rolls out of 1,500 bags.
+  const packsInStock = hasPacks ? Math.floor(item.quantity / packSize) : 0;
   const fieldNumber = Math.max(0, Math.floor(Number(field) || 0));
   const fieldUnits = inPacks ? fieldNumber * packSize : fieldNumber;
 
@@ -94,15 +98,17 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
       const left = result.item.quantity;
       if (kind === "take") {
         showNotice(
-          result.clamped ? `Only ${result.applied} were left, set to 0.` : `Took ${result.applied}. ${left} left.`,
+          result.clamped
+            ? t("stock.tookClamped", { count: result.applied })
+            : t("stock.took", { count: result.applied, left }),
           result.applied > 0 ? result.movement.id : null,
         );
       } else {
-        showNotice(`Received ${result.applied}. ${left} now.`, result.movement.id);
+        showNotice(t("stock.received", { count: result.applied, left }), result.movement.id);
       }
       setField("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "That didn't save. Try again.");
+      setError(e instanceof Error ? e.message : t("stock.saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -115,9 +121,9 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
     try {
       const result = await api<MovementResult>(`/api/movements/${movementId}/undo`, { method: "POST" });
       apply(result);
-      showNotice(`Undone. ${result.item.quantity} left.`, null);
+      showNotice(t("stock.undone", { count: result.item.quantity }), null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "That couldn't be undone.");
+      setError(e instanceof Error ? e.message : t("stock.undoFailed"));
     } finally {
       setBusy(false);
     }
@@ -142,8 +148,8 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
 
   const sign = mode === "take" ? "-" : "+";
   const presetVariant = mode === "take" ? "primary" : "secondary";
-  const verb = mode === "take" ? "Take" : "Receive";
-  const unitWord = pluralise(item.unitName, fieldUnits || 2);
+  const verb = mode === "take" ? t("stock.take") : t("stock.receive");
+  const unitWord = pluralise(item.unitName, fieldUnits || 2, locale);
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
@@ -153,7 +159,7 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
             <span>{notice.text}</span>
             {notice.undoId ? (
               <Button variant="link" size="sm" disabled={blocked} onClick={() => void undo(notice.undoId!)}>
-                Undo
+                {t("stock.undo")}
               </Button>
             ) : null}
           </>
@@ -164,21 +170,39 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
         <div className="flex items-center gap-3">
           <ItemThumb item={item} size={48} />
           <div className="min-w-0">
-            <p className="truncate text-lg font-semibold leading-tight">{item.name}</p>
+            <p className="truncate text-lg font-semibold leading-tight">
+              <bdi>{item.name}</bdi>
+            </p>
             <p className="truncate text-xs text-stencil-muted">
-              {[item.location?.name, item.category?.name].filter(Boolean).join(", ") || pluralise(item.unitName, 2)}
+              <bdi>
+                {[item.location?.name, item.category?.name].filter(Boolean).join(locale === "ar" ? "، " : ", ") ||
+                  pluralise(item.unitName, 2, locale)}
+              </bdi>
             </p>
           </div>
         </div>
       ) : null}
 
       <div>
-        <QuantityNumeral quantity={item.quantity} status={item.status} size="sheet" />
-        <p className="text-base text-stencil-muted">{pluralise(item.unitName, item.quantity)} left</p>
+        <QuantityNumeral
+          quantity={item.quantity}
+          status={item.status}
+          size="sheet"
+          unitName={item.unitName}
+          packSize={item.packSize}
+          packName={item.packName}
+        />
+        {/* The pack display already spells out the individual count, so the
+            "left" subtitle only helps when there isn't one. */}
+        {hasPacks && packsInStock >= 1 ? null : (
+          <p className="text-base text-stencil-muted">
+            {t("stock.left", { unit: pluralise(item.unitName, item.quantity, locale) })}
+          </p>
+        )}
         <StockBar quantity={item.quantity} threshold={item.threshold} status={item.status} className="mt-2" />
       </div>
 
-      <div role="tablist" aria-label="Take or receive" className="flex gap-6 rule-hair pt-1">
+      <div role="tablist" aria-label={t("stock.tabs")} className="flex gap-6 rule-hair pt-1">
         {(["take", "receive"] as const).map((m) => (
           <button
             key={m}
@@ -191,12 +215,12 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
               mode === m ? "border-stencil text-stencil" : "border-transparent text-stencil-muted",
             )}
           >
-            {m === "take" ? "Take" : "Receive"}
+            {m === "take" ? t("stock.take") : t("stock.receive")}
           </button>
         ))}
       </div>
 
-      <div role="group" aria-label={`${verb} presets`} className="grid grid-cols-4 gap-2 desk:grid-cols-5">
+      <div role="group" aria-label={t("stock.presets", { verb })} className="grid grid-cols-4 gap-2 desk:grid-cols-5">
         {presets.map((n) => (
           <Button key={n} variant={presetVariant} disabled={blocked} onClick={() => void act(mode, n)} className="tabular">
             {sign}
@@ -210,7 +234,8 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
             onClick={() => void act(mode, packSize)}
             className="col-span-2 tabular desk:col-span-1"
           >
-            {sign}1 {item.packName}
+            {sign}
+            {t("stock.onePack", { pack: item.packName })}
           </Button>
         ) : null}
       </div>
@@ -229,14 +254,14 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
             inputMode="numeric"
             min={1}
             step={1}
-            aria-label={`Amount to ${mode}`}
-            placeholder="Amount"
+            aria-label={t("stock.amountTo", { verb })}
+            placeholder={t("common.amount")}
             className="w-28"
             value={field}
             onChange={(e) => setField(e.target.value)}
           />
           {hasPacks ? (
-            <div role="group" aria-label="Packs or units" className="flex h-tap rounded-control border border-stencil">
+            <div role="group" aria-label={t("stock.packsOrUnits")} className="flex h-tap rounded-control border border-stencil">
               {[false, true].map((packs) => (
                 <button
                   key={String(packs)}
@@ -245,25 +270,30 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
                   onClick={() => setInPacks(packs)}
                   className={cn("px-3 text-base font-semibold", inPacks === packs ? "bg-stencil text-paper" : "text-stencil")}
                 >
-                  {packs ? pluralise(item.packName!, 2) : pluralise(item.unitName, 2)}
+                  {packs ? pluralise(item.packName!, 2, locale) : pluralise(item.unitName, 2, locale)}
                 </button>
               ))}
             </div>
           ) : null}
           {/* Outlined, so the yellow presets stay the only bright thing here. */}
-          <Button type="submit" variant="secondary" disabled={blocked || fieldUnits < 1} className="ml-auto">
+          <Button type="submit" variant="secondary" disabled={blocked || fieldUnits < 1} className="ms-auto">
             {verb} {fieldUnits > 0 ? fieldUnits : ""}
           </Button>
         </div>
         {hasPacks && inPacks && fieldNumber > 0 ? (
           <p className="text-xs text-stencil-muted tabular">
-            {fieldNumber} {pluralise(item.packName!, fieldNumber)} = {fieldUnits} {unitWord}
+            {t("stock.packEquals", {
+              packs: fieldNumber,
+              packUnit: pluralise(item.packName!, fieldNumber, locale),
+              units: fieldUnits,
+              unit: unitWord,
+            })}
           </p>
         ) : null}
       </form>
 
       {error ? (
-        <p role="alert" className="border-l-[3px] border-bay-red pl-3 text-base">
+        <p role="alert" className="border-s-[3px] border-bay-red ps-3 text-base">
           {error}
         </p>
       ) : null}

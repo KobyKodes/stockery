@@ -4,12 +4,17 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Filters } from "@/components/storeroom/filters";
 import { ItemList } from "@/components/storeroom/item-list";
+import { getT } from "@/lib/i18n/server";
 import { listItems } from "@/lib/items";
+import { getLocationTree, locationOptions } from "@/lib/locations";
 import { prisma } from "@/lib/prisma";
 import { getTakePresets } from "@/lib/settings";
 import { listQuery } from "@/lib/validation";
 
-export const metadata: Metadata = { title: "Storeroom" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("storeroom.title") };
+}
 
 export default async function StoreroomPage({ searchParams }: PageProps<"/">) {
   const raw = await searchParams;
@@ -17,20 +22,22 @@ export default async function StoreroomPage({ searchParams }: PageProps<"/">) {
   const query = parsed.success ? parsed.data : {};
   const filtered = Boolean(query.q || query.location || query.category || (query.status && query.status !== "all"));
 
-  const [items, locations, categories, presets] = await Promise.all([
+  const [t, items, tree, categories, presets] = await Promise.all([
+    getT(),
     listItems(query),
-    prisma.location.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, name: true } }),
+    getLocationTree(),
     prisma.category.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, name: true } }),
     getTakePresets(),
   ]);
+  const locations = locationOptions(tree);
 
   return (
     <main className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl">Storeroom</h1>
+        <h1 className="text-xl">{t("storeroom.title")}</h1>
         <Button render={<Link href="/items/new" />}>
           <Plus aria-hidden />
-          Add item
+          {t("storeroom.addItem")}
         </Button>
       </div>
       <Filters locations={locations} categories={categories} />

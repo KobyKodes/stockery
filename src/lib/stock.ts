@@ -1,5 +1,7 @@
 // Pure stock maths. No database, no React. Everything here has a test.
 
+import type { Locale } from "@/lib/i18n/config";
+
 export type StockStatus = "ok" | "low" | "out";
 
 export type StockFields = { quantity: number; threshold: number };
@@ -17,10 +19,17 @@ export function stockStatus(item: StockFields): StockStatus {
   return "ok";
 }
 
-/** Plural for plain kitchen words: bag/bags, box/boxes, case/cases. */
+/**
+ * Plural for plain kitchen words: bag/bags, box/boxes, case/cases.
+ *
+ * Unit and pack names are typed in by the kitchen, not translated, so these
+ * English rules only apply while the app is in English. In any other language
+ * the word is left exactly as it was entered.
+ */
 const UNCOUNTABLE = new Set(["each", "pair", "stock"]);
 
-export function pluralise(word: string, n: number): string {
+export function pluralise(word: string, n: number, locale: Locale = "en"): string {
+  if (locale !== "en") return word;
   if (n === 1 || UNCOUNTABLE.has(word.trim().toLowerCase())) return word;
   if (/(s|x|z|ch|sh)$/i.test(word)) return `${word}es`;
   if (/[^aeiou]y$/i.test(word)) return `${word.slice(0, -1)}ies`;
@@ -28,17 +37,17 @@ export function pluralise(word: string, n: number): string {
 }
 
 /** "3 cases + 4 bags" for packSize 12, quantity 40. "40 bags" without packs. */
-export function formatQuantity(item: PackFields): string {
+export function formatQuantity(item: PackFields, locale: Locale = "en"): string {
   const { quantity, unitName, packSize, packName } = item;
   if (!packSize || packSize <= 1 || !packName) {
-    return `${quantity} ${pluralise(unitName, quantity)}`;
+    return `${quantity} ${pluralise(unitName, quantity, locale)}`;
   }
   const packs = Math.floor(quantity / packSize);
   const units = quantity % packSize;
-  if (packs === 0) return `${units} ${pluralise(unitName, units)}`;
-  const packPart = `${packs} ${pluralise(packName, packs)}`;
+  if (packs === 0) return `${units} ${pluralise(unitName, units, locale)}`;
+  const packPart = `${packs} ${pluralise(packName, packs, locale)}`;
   if (units === 0) return packPart;
-  return `${packPart} + ${units} ${pluralise(unitName, units)}`;
+  return `${packPart} + ${units} ${pluralise(unitName, units, locale)}`;
 }
 
 /** Convert an entry of {packs, units} to base units. */

@@ -1,5 +1,6 @@
-// Seeds a realistic storeroom: 4 locations, 5 categories, 25 items, several
-// of them low or out so the running-low strip and reorder list have work to do.
+// Seeds a realistic storeroom: 2 stores (Store 2 with four shelves), 5
+// categories, 25 items, several of them low or out so the running-low strip
+// and reorder list have work to do.
 // Run with: npm run db:seed
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
@@ -9,7 +10,12 @@ import { stockStatus } from "../src/lib/stock";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
-const locations = ["Shelf A", "Shelf B", "Under sink", "Walk-in door"];
+// Locations nest one level. A store with `shelves` holds no items directly;
+// items live on its shelves. A store with no shelves (Store 1) holds items.
+const stores: { name: string; shelves: string[] }[] = [
+  { name: "Store 1", shelves: [] },
+  { name: "Store 2", shelves: ["Shelf A", "Shelf B", "Shelf C", "Shelf D"] },
+];
 const categories = ["Cleaning", "Paper", "Disposables", "Drinks", "Gloves and bags"];
 
 type SeedItem = {
@@ -59,6 +65,17 @@ const items: SeedItem[] = [
   { name: "Cola cans", description: "330ml", category: "Drinks", location: "Walk-in door", quantity: 6, unitName: "can", packSize: 24, packName: "case", threshold: 24 },
 ];
 
+// Items were authored against a flat list of shelves. Remap each to a leaf in
+// the new store/shelf tree. Leaves are addressed by path: "Store 1" (a store
+// with no shelves) or "Store 2/Shelf A" (a shelf under a store).
+function leafPath(item: SeedItem): string {
+  if (item.location === "Shelf A") return "Store 2/Shelf A";
+  if (item.location === "Shelf B") return item.category === "Paper" ? "Store 2/Shelf B" : "Store 2/Shelf C";
+  if (item.location === "Under sink") return "Store 1";
+  if (item.location === "Walk-in door") return "Store 2/Shelf D";
+  return item.location;
+}
+
 async function main() {
   await prisma.reorderEntry.deleteMany();
   await prisma.stockMovement.deleteMany();
@@ -66,10 +83,19 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.location.deleteMany();
 
-  const locationIds = new Map<string, string>();
-  for (const [i, name] of locations.entries()) {
-    const row = await prisma.location.create({ data: { name, sortOrder: i } });
-    locationIds.set(name, row.id);
+  // Path ("Store 1" or "Store 2/Shelf A") -> location id, for item assignment.
+  const leafIds = new Map<string, string>();
+  for (const [i, store] of stores.entries()) {
+    const storeRow = await prisma.location.create({ data: { name: store.name, sortOrder: i } });
+    if (store.shelves.length === 0) {
+      leafIds.set(store.name, storeRow.id); // the store itself is the leaf
+    }
+    for (const [j, shelf] of store.shelves.entries()) {
+      const shelfRow = await prisma.location.create({
+        data: { name: shelf, sortOrder: j, parentId: storeRow.id },
+      });
+      leafIds.set(`${store.name}/${shelf}`, shelfRow.id);
+    }
   }
   const categoryIds = new Map<string, string>();
   for (const [i, name] of categories.entries()) {
@@ -79,14 +105,15 @@ async function main() {
 
   const perLocation = new Map<string, number>();
   for (const item of items) {
-    const sortOrder = perLocation.get(item.location) ?? 0;
-    perLocation.set(item.location, sortOrder + 1);
+    const path = leafPath(item);
+    const sortOrder = perLocation.get(path) ?? 0;
+    perLocation.set(path, sortOrder + 1);
     const created = await prisma.item.create({
       data: {
         name: item.name,
         description: item.description,
         categoryId: categoryIds.get(item.category),
-        locationId: locationIds.get(item.location),
+        locationId: leafIds.get(path),
         quantity: item.quantity,
         unitName: item.unitName,
         packSize: item.packSize,
@@ -105,7 +132,8 @@ async function main() {
   }
 
   const count = await prisma.item.count();
-  console.log(`Seeded ${count} items across ${locations.length} locations and ${categories.length} categories.`);
+  const locationCount = await prisma.location.count();
+  console.log(`Seeded ${count} items across ${locationCount} locations and ${categories.length} categories.`);
 }
 
 main()

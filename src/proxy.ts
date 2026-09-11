@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "@/auth";
+import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/i18n/config";
+import { createTranslator } from "@/lib/i18n/translate";
 
 // Everything except the auth endpoints and static assets needs a session.
 // Pages redirect to /login; API routes answer 401 so a fetch never follows a
@@ -11,7 +13,10 @@ export async function proxy(request: NextRequest) {
 
   if (!session) {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
+      // This reply never passes through handle(), so it reads the cookie itself.
+      const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
+      const t = createTranslator(isLocale(cookie) ? cookie : DEFAULT_LOCALE);
+      return NextResponse.json({ error: t("error.signIn") }, { status: 401 });
     }
     if (pathname !== "/login") {
       const login = new URL("/login", request.url);

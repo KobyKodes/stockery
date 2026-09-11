@@ -1,6 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/lib/i18n/client";
 import { fromBaseUnits, pluralise, toBaseUnits } from "@/lib/stock";
 
 type Props = {
@@ -16,6 +17,7 @@ type Props = {
 // Enter a quantity as packs + units when the item has packs, or as plain
 // units otherwise. The stored value is always base units.
 export function PackEntry({ id, value, onChange, unitName, packSize, packName, autoFocus }: Props) {
+  const { locale, t } = useI18n();
   const hasPacks = !!packSize && packSize > 1 && !!packName;
 
   if (!hasPacks) {
@@ -33,7 +35,7 @@ export function PackEntry({ id, value, onChange, unitName, packSize, packName, a
           onChange={(e) => onChange(toBaseUnits(0, Number(e.target.value), null))}
           onFocus={(e) => e.currentTarget.select()}
         />
-        <span className="text-base text-stencil-muted">{pluralise(unitName, value)}</span>
+        <span className="text-base text-stencil-muted">{pluralise(unitName, value, locale)}</span>
       </div>
     );
   }
@@ -53,9 +55,9 @@ export function PackEntry({ id, value, onChange, unitName, packSize, packName, a
           value={packs}
           onChange={(e) => onChange(toBaseUnits(Number(e.target.value), units, packSize))}
           onFocus={(e) => e.currentTarget.select()}
-          aria-label={`${pluralise(packName, 2)}`}
+          aria-label={pluralise(packName, 2, locale)}
         />
-        <span className="text-base text-stencil-muted">{pluralise(packName, packs)}</span>
+        <span className="text-base text-stencil-muted">{pluralise(packName, packs, locale)}</span>
         <span className="text-base text-stencil-muted">+</span>
         <Input
           id={`${id}-units`}
@@ -67,12 +69,12 @@ export function PackEntry({ id, value, onChange, unitName, packSize, packName, a
           value={units}
           onChange={(e) => onChange(toBaseUnits(packs, Number(e.target.value), packSize))}
           onFocus={(e) => e.currentTarget.select()}
-          aria-label={`${pluralise(unitName, 2)}`}
+          aria-label={pluralise(unitName, 2, locale)}
         />
-        <span className="text-base text-stencil-muted">{pluralise(unitName, units)}</span>
+        <span className="text-base text-stencil-muted">{pluralise(unitName, units, locale)}</span>
       </div>
       <p className="text-xs text-stencil-muted tabular">
-        = {value} {pluralise(unitName, value)}
+        {t("packEntry.equals", { quantity: value, unit: pluralise(unitName, value, locale) })}
       </p>
     </div>
   );

@@ -1,5 +1,19 @@
+import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/config";
+import { createTranslator } from "@/lib/i18n/translate";
+
 // Client-side fetch wrapper. Every route answers JSON; on failure the body
-// carries an `error` sentence meant to be shown as-is.
+// carries an `error` sentence, already written in the caller's language,
+// meant to be shown as-is.
+
+/**
+ * The two fallbacks below fire when there is no body to read, which is too
+ * early for a React hook. The language is on <html lang>, put there by the
+ * root layout, so read it from the document.
+ */
+function translator() {
+  const lang = typeof document === "undefined" ? "" : document.documentElement.lang;
+  return createTranslator(isLocale(lang) ? lang : DEFAULT_LOCALE);
+}
 
 export class RequestError extends Error {
   constructor(
@@ -29,12 +43,10 @@ export async function api<T = unknown>(
     // no body
   }
   if (!res.ok) {
-    const message =
-      data && typeof data === "object" && "error" in data && typeof data.error === "string"
-        ? data.error
-        : res.status === 401
-          ? "Sign in to continue."
-          : "Something went wrong. Try again.";
+    const fromBody =
+      data && typeof data === "object" && "error" in data && typeof data.error === "string" ? data.error : null;
+    const t = translator();
+    const message = fromBody ?? (res.status === 401 ? t("error.signIn") : t("error.generic"));
     throw new RequestError(res.status, message);
   }
   return data as T;

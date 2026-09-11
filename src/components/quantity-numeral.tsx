@@ -1,6 +1,9 @@
-import type { StockStatus } from "@/lib/stock";
-import { statusWord } from "@/lib/labels";
+"use client";
+
 import { RollingNumber } from "@/components/rolling-number";
+import { useI18n } from "@/lib/i18n/client";
+import { statusKey } from "@/lib/labels";
+import { pluralise, type StockStatus } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -8,27 +11,79 @@ type Props = {
   status: StockStatus;
   size?: "row" | "sheet";
   className?: string;
+  // Pass a pack size and name to lead with the pack count — "2 cases or 12
+  // gallons". Without them (or with fewer than one full pack in stock) the
+  // individual count is the single number.
+  unitName?: string;
+  packSize?: number | null;
+  packName?: string | null;
 };
 
-// The one bold element. 44px in a row, 72px in the take sheet. Status is
-// told by color and by a word, and the bar below adds a third channel.
-// The digits roll to a new value after a change.
-export function QuantityNumeral({ quantity, status, size = "row", className }: Props) {
-  const word = statusWord(status);
+// The stock figure. On a packed item the pack count leads, then "or", then the
+// loose individual count — the same phrasing in a list row and in the take
+// sheet, only the type sizes differ. Digits roll to a new value on a change.
+export function QuantityNumeral({ quantity, status, size = "row", className, unitName, packSize, packName }: Props) {
+  const { locale, t } = useI18n();
+  const key = statusKey(status);
+  const word = key ? t(key) : "";
+
+  const statusInk = cn(
+    status === "ok" && "text-status-ok-ink",
+    status === "low" && "text-status-low-ink",
+    status === "out" && "text-status-out-ink",
+  );
+
+  const packs = packSize && packSize > 1 ? Math.floor(quantity / packSize) : 0;
+  const showPacks = Boolean(packSize && packSize > 1 && packName && unitName) && packs >= 1;
+  const packLabel = <bdi>{pluralise(packName ?? "", packs, locale)}</bdi>;
+  const unitLabel = <bdi>{pluralise(unitName ?? "", quantity, locale)}</bdi>;
+
+  // Take sheet: generous type, the two counts side by side.
+  if (size === "sheet") {
+    if (!showPacks) {
+      return (
+        <span className={cn("inline-flex items-baseline gap-2", className)}>
+          <RollingNumber value={quantity} className={cn("numeral text-3xl", statusInk)} />
+          <span className="w-10 rtl:w-16 text-xs font-semibold text-stencil">{word}</span>
+        </span>
+      );
+    }
+    return (
+      <span className={cn("inline-flex flex-wrap items-baseline gap-x-2", className)}>
+        <span className="inline-flex items-baseline gap-1.5">
+          <RollingNumber value={packs} className={cn("numeral text-3xl", statusInk)} />
+          <span className="text-base font-semibold text-stencil">{packLabel}</span>
+        </span>
+        <span className="text-sm font-semibold text-stencil-muted">{t("common.or")}</span>
+        <span className="inline-flex items-baseline gap-1 text-stencil-muted">
+          <RollingNumber value={quantity} className="numeral text-xl" />
+          <span className="text-sm font-semibold">{unitLabel}</span>
+        </span>
+      </span>
+    );
+  }
+
+  // List row: one compact line, small enough to sit beside the actions.
+  if (!showPacks) {
+    return (
+      <span className={cn("inline-flex items-baseline gap-1.5 whitespace-nowrap", className)}>
+        <RollingNumber value={quantity} className={cn("numeral text-xl", statusInk)} />
+        {unitName ? <span className="text-xs font-semibold text-stencil-muted">{unitLabel}</span> : null}
+        {word ? <span className="text-xs font-semibold text-stencil">{word}</span> : null}
+      </span>
+    );
+  }
   return (
-    <span className={cn("inline-flex items-baseline gap-2", className)}>
-      <RollingNumber
-        value={quantity}
-        className={cn(
-          "numeral",
-          size === "row" ? "text-2xl" : "text-3xl",
-          status === "ok" && "text-status-ok-ink",
-          status === "low" && "text-status-low-ink",
-          status === "out" && "text-status-out-ink",
-        )}
-      />
-      {/* The word slot is always reserved so digits line up down the column. */}
-      <span className={cn("text-xs font-semibold text-stencil", size === "row" ? "w-7" : "w-10")}>{word}</span>
+    <span className={cn("inline-flex items-baseline gap-1.5 whitespace-nowrap", className)}>
+      <span className="inline-flex items-baseline gap-1">
+        <RollingNumber value={packs} className={cn("numeral text-xl", statusInk)} />
+        <span className="text-xs font-semibold text-stencil">{packLabel}</span>
+      </span>
+      <span className="text-xs font-semibold text-stencil-muted">{t("common.or")}</span>
+      <span className="inline-flex items-baseline gap-1 text-stencil-muted">
+        <RollingNumber value={quantity} className="numeral text-sm" />
+        <span className="text-[0.7rem] font-semibold">{unitLabel}</span>
+      </span>
     </span>
   );
 }

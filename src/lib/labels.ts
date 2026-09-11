@@ -1,19 +1,27 @@
+import type { MessageKey } from "@/lib/i18n/en";
+import type { StockStatus } from "@/lib/stock";
+
 // Copy that must stay consistent across the flow. An action keeps its name:
 // the Take button produces "Took 5" and a TAKE movement rendered as "Took".
+//
+// These map a value from the database onto a dictionary key, so the wording
+// itself lives in one place per language and the mapping stays shared.
 
-export const movementLabel: Record<string, string> = {
-  TAKE: "Took",
-  RECEIVE: "Received",
-  COUNT: "Counted",
-  ADJUST: "Adjusted",
-};
+const MOVEMENT_KEYS = {
+  TAKE: "movement.TAKE",
+  RECEIVE: "movement.RECEIVE",
+  COUNT: "movement.COUNT",
+  ADJUST: "movement.ADJUST",
+} as const satisfies Record<string, MessageKey>;
 
-export function statusWord(status: "ok" | "low" | "out"): string {
-  return status === "ok" ? "" : status;
+/** The dictionary key for a movement type, or null for an unknown one. */
+export function movementKey(type: string): MessageKey | null {
+  return MOVEMENT_KEYS[type as keyof typeof MOVEMENT_KEYS] ?? null;
 }
 
-export function runningLowHeading(count: number): string {
-  if (count === 0) return "Nothing is running low.";
-  if (count === 1) return "1 item running low";
-  return `${count} items running low`;
+/** "ok" is silent: only low and out get a word beside the numeral. */
+export function statusKey(status: StockStatus): MessageKey | null {
+  if (status === "low") return "filters.statusLow";
+  if (status === "out") return "filters.statusOut";
+  return null;
 }

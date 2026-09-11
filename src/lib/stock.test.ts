@@ -127,3 +127,20 @@ describe("canUndo", () => {
     expect(canUndo({ createdAt: now, type: "ADJUST" }, true, now)).toBe(false);
   });
 });
+
+describe("pluralise and formatQuantity outside English", () => {
+  it("leaves an Arabic unit name exactly as the kitchen typed it", () => {
+    expect(pluralise("كيس", 5, "ar")).toBe("كيس");
+    expect(pluralise("box", 5, "ar")).toBe("box");
+  });
+
+  it("still applies English rules by default", () => {
+    expect(pluralise("box", 5)).toBe("boxes");
+    expect(pluralise("box", 5, "en")).toBe("boxes");
+  });
+
+  it("keeps pack wording unpluralised in Arabic", () => {
+    const item = { quantity: 40, unitName: "كيس", packSize: 12, packName: "صندوق" };
+    expect(formatQuantity(item, "ar")).toBe("3 صندوق + 4 كيس");
+  });
+});

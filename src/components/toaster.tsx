@@ -53,7 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={t.id}
             className={
               t.tone === "error"
-                ? "rounded-control border-l-[3px] border-bay-red bg-paper px-4 py-3 text-base shadow-sheet"
+                ? "rounded-control border-s-[3px] border-bay-red bg-paper px-4 py-3 text-base shadow-sheet"
                 : "rounded-control bg-stencil px-4 py-3 text-base text-paper shadow-sheet"
             }
           >

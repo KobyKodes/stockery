@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { msg } from "@/lib/i18n/message";
 
 // Request shapes for every route handler. Messages are written for the
 // person reading them in a toast, not for a developer.
@@ -7,7 +8,7 @@ const optionalText = (max: number) =>
   z
     .string()
     .trim()
-    .max(max, `Keep this under ${max} characters.`)
+    .max(max, msg("error.tooLong", { max }))
     .transform((s) => (s.length ? s : null))
     .nullable()
     .optional();
@@ -16,34 +17,34 @@ const optionalId = z.string().min(1).nullable().optional();
 
 export const itemInput = z
   .object({
-    name: z.string().trim().min(1, "Give the item a name.").max(80, "Keep the name under 80 characters."),
+    name: z.string().trim().min(1, msg("error.itemName")).max(80, msg("error.nameMax80")),
     description: optionalText(200),
     categoryId: optionalId,
     locationId: optionalId,
-    quantity: z.number().int("Quantity must be a whole number.").min(0, "Quantity can't be negative."),
-    unitName: z.string().trim().min(1, "Say what one of these is called.").max(30),
-    packSize: z.number().int().min(2, "A pack holds at least 2.").nullable().optional(),
+    quantity: z.number().int(msg("error.quantityWhole")).min(0, msg("error.quantityNegative")),
+    unitName: z.string().trim().min(1, msg("error.unitName")).max(30),
+    packSize: z.number().int().min(2, msg("error.packMin")).nullable().optional(),
     packName: optionalText(30),
-    threshold: z.number().int("Threshold must be a whole number.").min(0, "Threshold can't be negative."),
+    threshold: z.number().int(msg("error.thresholdWhole")).min(0, msg("error.thresholdNegative")),
   })
   .superRefine((v, ctx) => {
     if (v.packSize && !v.packName) {
-      ctx.addIssue({ code: "custom", path: ["packName"], message: "Name the pack (case, box, sleeve)." });
+      ctx.addIssue({ code: "custom", path: ["packName"], message: msg("error.packName") });
     }
   });
 export type ItemInput = z.infer<typeof itemInput>;
 
 export const itemPatch = z
   .object({
-    name: z.string().trim().min(1, "Give the item a name.").max(80),
+    name: z.string().trim().min(1, msg("error.itemName")).max(80),
     description: optionalText(200),
     categoryId: optionalId,
     locationId: optionalId,
-    quantity: z.number().int().min(0, "Quantity can't be negative."),
+    quantity: z.number().int().min(0, msg("error.quantityNegative")),
     unitName: z.string().trim().min(1).max(30),
-    packSize: z.number().int().min(2, "A pack holds at least 2.").nullable(),
+    packSize: z.number().int().min(2, msg("error.packMin")).nullable(),
     packName: optionalText(30),
-    threshold: z.number().int().min(0, "Threshold can't be negative."),
+    threshold: z.number().int().min(0, msg("error.thresholdNegative")),
     sortOrder: z.number().int().min(0),
     archived: z.boolean(),
   })
@@ -59,11 +60,11 @@ export const listQuery = z.object({
 export type ListQuery = z.infer<typeof listQuery>;
 
 export const quantityBody = z.object({
-  quantity: z.number().int("Use a whole number.").min(1, "Enter at least 1."),
+  quantity: z.number().int(msg("error.whole")).min(1, msg("error.atLeastOne")),
 });
 
 export const countBody = z.object({
-  counted: z.number().int("Use a whole number.").min(0, "A count can't be negative."),
+  counted: z.number().int(msg("error.whole")).min(0, msg("error.countNegative")),
 });
 
 export const reorderIdsBody = z.object({
@@ -71,12 +72,18 @@ export const reorderIdsBody = z.object({
 });
 
 export const nameBody = z.object({
-  name: z.string().trim().min(1, "Give it a name.").max(40, "Keep the name under 40 characters."),
+  name: z.string().trim().min(1, msg("error.name")).max(40, msg("error.nameMax40")),
+});
+
+// Locations may be created inside a store; parentId names that store.
+export const locationCreate = z.object({
+  name: z.string().trim().min(1, msg("error.name")).max(40, msg("error.nameMax40")),
+  parentId: z.string().min(1).nullable().optional(),
 });
 
 export const namePatch = z
   .object({
-    name: z.string().trim().min(1, "Give it a name.").max(40),
+    name: z.string().trim().min(1, msg("error.name")).max(40),
     sortOrder: z.number().int().min(0),
   })
   .partial();
@@ -89,6 +96,6 @@ export const reorderAddBody = z.object({
 export const reorderPatch = z
   .object({
     checked: z.boolean(),
-    requestedQty: z.number().int().min(1, "Order at least 1."),
+    requestedQty: z.number().int().min(1, msg("error.orderAtLeastOne")),
   })
   .partial();

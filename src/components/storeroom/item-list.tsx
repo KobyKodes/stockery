@@ -9,7 +9,8 @@ import { RollingNumber } from "@/components/rolling-number";
 import { RearrangeGroup } from "@/components/storeroom/rearrange-group";
 import { TakeSheet } from "@/components/take-sheet";
 import { api } from "@/lib/fetcher";
-import { groupByLocation, runningLow, type ItemRow as ItemRowData } from "@/lib/item-view";
+import { useT } from "@/lib/i18n/client";
+import { groupByCategory, runningLow, type ItemRow as ItemRowData } from "@/lib/item-view";
 
 type Props = {
   items: ItemRowData[];
@@ -17,10 +18,11 @@ type Props = {
   filtered: boolean;
 };
 
-// The storeroom list: a running-low strip, then location groups in walk
-// order. A heavy rule and an uppercase heading open every group (the aisle
-// sign). An item can appear in both the strip and its group on purpose.
+// The storeroom list: a running-low strip, then category groups (ordered by
+// each category's sortOrder). A heavy rule and an uppercase heading open
+// every group. An item can appear in both the strip and its group on purpose.
 export function ItemList({ items: serverItems, presets, filtered }: Props) {
+  const t = useT();
   // Rows changed in the take sheet are patched in place until the server
   // re-renders with fresh data (router.refresh after every change).
   const [overrides, setOverrides] = useState<Record<string, ItemRowData>>({});
@@ -60,7 +62,7 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
   }
 
   const low = runningLow(items);
-  const groups = groupByLocation(items).map((g) => {
+  const groups = groupByCategory(items, t("common.uncategorized")).map((g) => {
     const ids = order[g.key];
     if (!ids) return g;
     const byId = new Map(g.items.map((i) => [i.id, i]));
@@ -70,13 +72,13 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
 
   if (items.length === 0) {
     return filtered ? (
-      <p className="py-12 text-base text-stencil-muted">Nothing matches those filters.</p>
+      <p className="py-12 text-base text-stencil-muted">{t("storeroom.noMatches")}</p>
     ) : (
       <div className="flex flex-col items-start gap-4 py-12">
-        <p className="text-lg">The storeroom is empty. Add the first thing on the shelf.</p>
+        <p className="text-lg">{t("storeroom.empty")}</p>
         <Button render={<Link href="/items/new" />}>
           <Plus aria-hidden />
-          Add your first item
+          {t("storeroom.addFirstItem")}
         </Button>
       </div>
     );
@@ -86,12 +88,12 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
     <div className="flex flex-col gap-8">
       <div className="-mb-6 flex items-center justify-between gap-4">
         {rearranging ? (
-          <p className="text-base text-stencil-muted">Drag a row, or use the arrow keys, to match the shelf.</p>
+          <p className="text-base text-stencil-muted">{t("storeroom.rearrangeHint")}</p>
         ) : (
           <span />
         )}
         <Button variant="ghost" size="sm" aria-pressed={rearranging} onClick={() => setRearranging((r) => !r)}>
-          {rearranging ? "Done rearranging" : "Rearrange"}
+          {rearranging ? t("storeroom.doneRearranging") : t("storeroom.rearrange")}
         </Button>
       </div>
 
@@ -100,10 +102,11 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
       <section aria-labelledby="running-low">
         <h2 id="running-low" className="rule-hair pt-3 font-body text-base font-semibold">
           {low.length === 0 ? (
-            "Nothing is running low."
+            t("storeroom.nothingLow")
           ) : (
             <>
-              <RollingNumber value={low.length} from={0} className="tabular" /> {low.length === 1 ? "item" : "items"} running low
+              <RollingNumber value={low.length} from={0} className="tabular" />{" "}
+              {t("storeroom.runningLow", { count: low.length })}
             </>
           )}
         </h2>

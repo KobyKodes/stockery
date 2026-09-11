@@ -3,25 +3,32 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
+import { ar as arDates, enGB } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { ItemThumb } from "@/components/item-thumb";
 import { StockPanel } from "@/components/stock-panel";
+import { getI18n, getT } from "@/lib/i18n/server";
 import { itemImageUrl } from "@/lib/image";
 import { getItemRow } from "@/lib/items";
-import { movementLabel } from "@/lib/labels";
+import { movementKey } from "@/lib/labels";
+import { resolveMessage } from "@/lib/i18n/message";
 import { prisma } from "@/lib/prisma";
 import { getTakePresets } from "@/lib/settings";
 import { formatQuantity, pluralise } from "@/lib/stock";
 
 export async function generateMetadata({ params }: PageProps<"/items/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const item = await prisma.item.findUnique({ where: { id }, select: { name: true } });
-  return { title: item?.name ?? "Item" };
+  const [t, item] = await Promise.all([
+    getT(),
+    prisma.item.findUnique({ where: { id }, select: { name: true } }),
+  ]);
+  return { title: item?.name ?? t("meta.item") };
 }
 
 export default async function ItemDetailPage({ params }: PageProps<"/items/[id]">) {
   const { id } = await params;
-  const [item, movements, presets] = await Promise.all([
+  const [{ locale, t }, item, movements, presets] = await Promise.all([
+    getI18n(),
     getItemRow(id),
     prisma.stockMovement.findMany({
       where: { itemId: id },
@@ -33,36 +40,51 @@ export default async function ItemDetailPage({ params }: PageProps<"/items/[id]"
   ]);
   if (!item) notFound();
 
+  // Month names come from date-fns; the 24-hour clock and the digits stay the
+  // same in both languages so the column still lines up.
+  const dates = locale === "ar" ? arDates : enGB;
+
   const facts: [string, string][] = [
-    ["Location", item.location?.name ?? "Unassigned"],
-    ["Category", item.category?.name ?? "None"],
-    ["Counted in", pluralise(item.unitName, 2)],
-    ["Packs", item.packSize && item.packName ? `1 ${item.packName} holds ${item.packSize}` : "Not sold in packs"],
-    ["Warn when down to", `${item.threshold} ${pluralise(item.unitName, item.threshold)}`],
+    [t("detail.location"), item.location?.name ?? t("common.unassigned")],
+    [t("detail.category"), item.category?.name ?? t("common.none")],
+    [t("detail.countedIn"), pluralise(item.unitName, 2, locale)],
+    [
+      t("detail.packs"),
+      item.packSize && item.packName
+        ? t("detail.packHolds", { pack: item.packName, count: item.packSize })
+        : t("detail.noPacks"),
+    ],
+    [t("detail.warnAt"), `${item.threshold} ${pluralise(item.unitName, item.threshold, locale)}`],
   ];
 
   return (
     <main className="flex flex-col gap-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-xl">{item.name}</h1>
+          <h1 className="text-xl">
+            <bdi>{item.name}</bdi>
+          </h1>
           {item.description ? <p className="mt-1 max-w-prose text-base text-stencil-muted">{item.description}</p> : null}
         </div>
         <Button variant="secondary" render={<Link href={`/items/${item.id}/edit`} />}>
-          Edit item
+          {t("detail.editItem")}
         </Button>
       </div>
 
       <div className="grid gap-8 desk:grid-cols-[minmax(0,1fr)_20rem]">
         <section className="flex flex-col gap-6">
           <StockPanel item={item} presets={presets} showHeader={false} className="max-w-md" />
-          <p className="text-base text-stencil-muted">{formatQuantity(item)} on hand</p>
+          <p className="text-base text-stencil-muted">
+            {t("stock.onHand", { quantity: formatQuantity(item, locale) })}
+          </p>
 
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-base">
             {facts.map(([k, v]) => (
               <div key={k} className="contents">
                 <dt className="text-stencil-muted">{k}</dt>
-                <dd>{v}</dd>
+                <dd>
+                  <bdi>{v}</bdi>
+                </dd>
               </div>
             ))}
           </dl>
@@ -79,32 +101,39 @@ export default async function ItemDetailPage({ params }: PageProps<"/items/[id]"
 
       <section aria-labelledby="history">
         <h2 id="history" className="rule-heavy pt-3 text-lg">
-          Last {movements.length} {movements.length === 1 ? "change" : "changes"}
+          {t("detail.history", { count: movements.length })}
         </h2>
         {movements.length === 0 ? (
-          <p className="mt-2 text-base text-stencil-muted">No changes yet.</p>
+          <p className="mt-2 text-base text-stencil-muted">{t("detail.noHistory")}</p>
         ) : (
           <table className="mt-2 w-full text-base">
-            <thead className="text-left text-xs text-stencil-muted">
+            <thead className="text-start text-xs text-stencil-muted">
               <tr className="rule-hair">
-                <th className="py-2 font-semibold">When</th>
-                <th className="py-2 font-semibold">What</th>
-                <th className="py-2 text-right font-semibold">Change</th>
-                <th className="py-2 text-right font-semibold">Left</th>
+                <th className="py-2 text-start font-semibold">{t("detail.colWhen")}</th>
+                <th className="py-2 text-start font-semibold">{t("detail.colWhat")}</th>
+                <th className="py-2 text-end font-semibold">{t("detail.colChange")}</th>
+                <th className="py-2 text-end font-semibold">{t("detail.colLeft")}</th>
               </tr>
             </thead>
             <tbody>
-              {movements.map((m) => (
-                <tr key={m.id} className="rule-hair">
-                  <td className="py-2 pr-3 whitespace-nowrap text-stencil-muted tabular">{format(m.createdAt, "d MMM, HH:mm")}</td>
-                  <td className="py-2">
-                    {movementLabel[m.type] ?? m.type}
-                    {m.note ? <span className="text-stencil-muted"> {m.note}</span> : null}
-                  </td>
-                  <td className="py-2 text-right tabular">{m.delta > 0 ? `+${m.delta}` : m.delta}</td>
-                  <td className="py-2 text-right font-semibold tabular">{m.quantityAfter}</td>
-                </tr>
-              ))}
+              {movements.map((m) => {
+                const key = movementKey(m.type);
+                return (
+                  <tr key={m.id} className="rule-hair">
+                    <td className="py-2 pe-3 whitespace-nowrap text-stencil-muted tabular">
+                      {format(m.createdAt, "d MMM, HH:mm", { locale: dates })}
+                    </td>
+                    <td className="py-2">
+                      {key ? t(key) : m.type}
+                      {m.note ? (
+                        <span className="text-stencil-muted"> {resolveMessage(m.note, t)}</span>
+                      ) : null}
+                    </td>
+                    <td className="py-2 text-end tabular">{m.delta > 0 ? `+${m.delta}` : m.delta}</td>
+                    <td className="py-2 text-end font-semibold tabular">{m.quantityAfter}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

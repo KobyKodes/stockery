@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { api } from "@/lib/fetcher";
+import { useI18n } from "@/lib/i18n/client";
 import type { ItemRow } from "@/lib/item-view";
 import { asPlainText, orderAmount, type ReorderRow } from "@/lib/reorder-view";
 import { pluralise } from "@/lib/stock";
@@ -27,6 +28,7 @@ type Props = {
 export function ReorderList({ entries: initial, addable }: Props) {
   const router = useRouter();
   const { toast } = useToast();
+  const { locale, t } = useI18n();
   const [entries, setEntries] = useState(initial);
   const [seen, setSeen] = useState(initial);
   if (seen !== initial) {
@@ -56,7 +58,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
       setEntries(result.entries);
       router.refresh();
     } catch (e) {
-      fail(e, "That change didn't save.");
+      fail(e, t("reorder.changeFailed"));
     }
   }
 
@@ -82,7 +84,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
       setAdding("");
       router.refresh();
     } catch (e) {
-      fail(e, "That item couldn't be added.");
+      fail(e, t("reorder.addFailed"));
     }
   }
 
@@ -94,7 +96,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
       setEntries(result.entries);
       router.refresh();
     } catch (e) {
-      fail(e, "That row couldn't be removed.");
+      fail(e, t("reorder.removeFailed"));
     } finally {
       setBusyId(null);
     }
@@ -108,10 +110,16 @@ export function ReorderList({ entries: initial, addable }: Props) {
         method: "POST",
       });
       setEntries(result.entries);
-      toast(`Received ${result.applied} ${pluralise(row.item.unitName, result.applied)} of ${row.item.name}`);
+      toast(
+        t("reorder.receivedToast", {
+          count: result.applied,
+          unit: pluralise(row.item.unitName, result.applied, locale),
+          name: row.item.name,
+        }),
+      );
       router.refresh();
     } catch (e) {
-      fail(e, "That delivery didn't save.");
+      fail(e, t("reorder.deliveryFailed"));
     } finally {
       setBusyId(null);
     }
@@ -119,10 +127,12 @@ export function ReorderList({ entries: initial, addable }: Props) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(asPlainText(toBuy.length ? toBuy : entries));
-      toast("List copied");
+      await navigator.clipboard.writeText(
+        asPlainText(toBuy.length ? toBuy : entries, t("reorder.plainTextHeading"), locale),
+      );
+      toast(t("reorder.copied"));
     } catch {
-      setError("The list couldn't be copied. Select it and copy by hand.");
+      setError(t("reorder.copyFailed"));
     }
   }
 
@@ -137,12 +147,12 @@ export function ReorderList({ entries: initial, addable }: Props) {
           }}
         >
           <NativeSelect
-            aria-label="Item to add to the list"
+            aria-label={t("reorder.addAria")}
             className="min-w-0 flex-1 desk:max-w-xs"
             value={adding}
             onChange={(e) => setAdding(e.target.value)}
           >
-            <option value="">Add an item</option>
+            <option value="">{t("reorder.addChoice")}</option>
             {choices.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name}
@@ -151,20 +161,20 @@ export function ReorderList({ entries: initial, addable }: Props) {
           </NativeSelect>
           <Button type="submit" disabled={!adding || !online}>
             <Plus aria-hidden />
-            Add item
+            {t("reorder.addItem")}
           </Button>
         </form>
         <Button variant="secondary" disabled={entries.length === 0} onClick={() => void copy()}>
           <ClipboardCopy aria-hidden />
-          Copy list
+          {t("reorder.copyList")}
         </Button>
       </div>
 
       {entries.length === 0 ? (
         <div className="flex flex-col items-start gap-4 py-8">
-          <p className="text-lg">Nothing to buy. Items appear here as soon as they run low.</p>
+          <p className="text-lg">{t("reorder.nothingToBuy")}</p>
           <Button variant="secondary" render={<Link href="/" />}>
-            Back to the storeroom
+            {t("common.backToStoreroom")}
           </Button>
         </div>
       ) : null}
@@ -172,7 +182,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
       {toBuy.length > 0 ? (
         <section aria-labelledby="to-buy">
           <h2 id="to-buy" className="sticky top-[59px] z-10 rule-heavy bg-concrete pt-2 pb-2 font-display text-lg font-bold uppercase leading-display tracking-[0.02em]">
-            To buy
+            {t("reorder.toBuy")}
           </h2>
           <ul>
             {toBuy.map((row) => (
@@ -193,7 +203,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
       {bought.length > 0 ? (
         <section aria-labelledby="bought">
           <h2 id="bought" className="sticky top-[59px] z-10 rule-heavy bg-concrete pt-2 pb-2 font-display text-lg font-bold uppercase leading-display tracking-[0.02em]">
-            Bought
+            {t("reorder.bought")}
           </h2>
           <ul>
             {bought.map((row) => (
@@ -212,7 +222,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
       ) : null}
 
       {error ? (
-        <p role="alert" className="border-l-[3px] border-bay-red pl-3 text-base">
+        <p role="alert" className="border-s-[3px] border-bay-red ps-3 text-base">
           {error}
         </p>
       ) : null}
@@ -235,6 +245,7 @@ function Row({
   onRemove: () => void;
   onReceive: () => void;
 }) {
+  const { locale, t } = useI18n();
   const { item } = row;
   return (
     <li className="rule-hair py-2">
@@ -245,36 +256,43 @@ function Row({
           <Checkbox
             checked={row.checked}
             onCheckedChange={(v) => onCheck(Boolean(v))}
-            aria-label={`Mark ${item.name} as bought`}
+            aria-label={t("reorder.markBought", { name: item.name })}
           />
           <ItemThumb item={item} size={40} />
           <div className="min-w-0 flex-1">
             <Link href={`/items/${item.id}`} className="block truncate text-base font-semibold hover:underline">
-              {item.name}
+              <bdi>{item.name}</bdi>
             </Link>
             <p className="truncate text-xs text-stencil-muted">
-              {item.quantity} {pluralise(item.unitName, item.quantity)} left
-              {row.addedAuto ? "" : ", added by hand"}
+              {t("reorder.leftCount", {
+                quantity: item.quantity,
+                unit: pluralise(item.unitName, item.quantity, locale),
+              })}
+              {row.addedAuto ? "" : t("reorder.addedByHand")}
             </p>
             {/* On a phone there is no room beside the field, so the pack
                 wording sits under the name instead. */}
-            <p className="truncate text-xs text-stencil-muted desk:hidden">Order {orderAmount(row)}</p>
+            <p className="truncate text-xs text-stencil-muted desk:hidden">
+              {t("reorder.order", { amount: orderAmount(row, locale) })}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pl-11 desk:pl-0">
+        <div className="flex items-center gap-3 ps-11 desk:ps-0">
           <Input
             type="number"
             inputMode="numeric"
             min={1}
             step={1}
             className="w-24 shrink-0"
-            aria-label={`Amount to order of ${item.name}`}
+            aria-label={t("reorder.amountToOrder", { name: item.name })}
             value={row.requestedQty}
             onChange={(e) => onQty(Math.max(0, Math.floor(Number(e.target.value))))}
             onFocus={(e) => e.currentTarget.select()}
           />
-          <span className="hidden w-40 shrink-0 truncate text-xs text-stencil-muted desk:block">{orderAmount(row)}</span>
+          <span className="hidden w-40 shrink-0 truncate text-xs text-stencil-muted desk:block">
+            <bdi>{orderAmount(row, locale)}</bdi>
+          </span>
           {/* Yellow only once a row is ticked, so the colour points at the
               rows whose delivery you are actually expecting. */}
           <Button
@@ -284,13 +302,13 @@ function Row({
             onClick={onReceive}
             className="h-tap desk:h-9"
           >
-            Received
+            {t("reorder.received")}
           </Button>
           <Button
             size="icon"
             variant="ghost"
             disabled={busy}
-            aria-label={`Take ${item.name} off the list`}
+            aria-label={t("reorder.removeAria", { name: item.name })}
             onClick={onRemove}
             className="desk:size-9"
           >
