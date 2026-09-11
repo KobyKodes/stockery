@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:copy": "tsx scripts/copy-data.ts",
-    "hash-password": "node scripts/hash-password.mjs"
+    "hash-password": "node scripts/hash-password.mjs",
+    "check-password-hash": "node scripts/check-password-hash.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
