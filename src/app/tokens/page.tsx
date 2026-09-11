@@ -14,6 +14,9 @@ const colors = [
   ["bay-red", "bg-bay-red", "Out of stock, destructive"],
   ["steel", "bg-steel", "Links, focus rings"],
   ["rule-soft", "bg-rule-soft", "Hairlines, bar tracks"],
+  ["on-safety", "bg-on-safety", "Ink on a yellow fill"],
+  ["on-bay-red", "bg-on-bay-red", "Ink on a red fill"],
+  ["scrim", "bg-scrim", "Behind a sheet or dialog"],
 ] as const;
 
 const statuses = [

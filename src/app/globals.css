@@ -6,20 +6,39 @@
   Stockery design tokens. Every color, size, rule and duration used by a
   component comes from here. Raw hex outside this file is a build failure.
   See docs/design-plan.md for the reasoning behind each value.
+
+  Colors are written as light-dark(light, dark): the browser picks the arm
+  that matches the `color-scheme` set at the bottom of this block, so the
+  dark theme is one extra value per token rather than a second palette to
+  keep in step. Nothing downstream changes — a component still writes
+  `bg-paper` and gets the right ground in either mode.
+
+  The two grounds and the ink swap ends of the scale rather than changing
+  meaning: "concrete" is still the page, "paper" still the raised surface,
+  "stencil" still the ink. That keeps an inverted chip (bg-stencil text-paper)
+  inverted in both modes.
 */
 @theme {
   /* color: the six named colors */
-  --color-concrete: #E9E7E1;
-  --color-paper: #F7F6F2;
-  --color-stencil: #14181C;
-  --color-stencil-muted: #4B5259;
+  --color-concrete: light-dark(#E9E7E1, #0F1317);
+  --color-paper: light-dark(#F7F6F2, #191E23);
+  --color-stencil: light-dark(#14181C, #E9E7E1);
+  --color-stencil-muted: light-dark(#4B5259, #9AA2AA);
   --color-safety: #FFC72C;
-  --color-safety-deep: #E0A800;
-  --color-safety-ink: #8A6400;
-  --color-bay-red: #C5213A;
-  --color-steel: #3D5F91;
-  --color-rule: #14181C;
-  --color-rule-soft: #C9C6BE;
+  --color-safety-deep: light-dark(#E0A800, #E8B300);
+  --color-safety-ink: light-dark(#8A6400, #FFD24D);
+  --color-bay-red: light-dark(#C5213A, #E74B60);
+  --color-steel: light-dark(#3D5F91, #8AB0EC);
+  --color-rule: light-dark(#14181C, #C6CBD1);
+  --color-rule-soft: light-dark(#C9C6BE, #333A41);
+  /* Ink that sits *on* a filled safety or bay-red block. It cannot be
+     "stencil" or "paper": those swap ends in dark mode, while yellow and red
+     stay where they are, so the ink on them is named separately. */
+  --color-on-safety: #14181C;
+  --color-on-bay-red: light-dark(#F7F6F2, #14181C);
+  /* The scrim behind a sheet or dialog, alpha included so it never needs an
+     opacity modifier. Always darker than the page, in either mode. */
+  --color-scrim: light-dark(rgba(20, 24, 28, 0.4), rgba(0, 0, 0, 0.7));
 
   /* semantic stock status: fills (bars, marks) */
   --color-status-ok: var(--color-stencil);
@@ -38,7 +57,7 @@
   --color-popover: var(--color-paper);
   --color-popover-foreground: var(--color-stencil);
   --color-primary: var(--color-safety);
-  --color-primary-foreground: var(--color-stencil);
+  --color-primary-foreground: var(--color-on-safety);
   --color-secondary: var(--color-paper);
   --color-secondary-foreground: var(--color-stencil);
   --color-muted: var(--color-paper);
@@ -46,7 +65,7 @@
   --color-accent: var(--color-paper);
   --color-accent-foreground: var(--color-stencil);
   --color-destructive: var(--color-bay-red);
-  --color-destructive-foreground: var(--color-paper);
+  --color-destructive-foreground: var(--color-on-bay-red);
   --color-border: var(--color-rule-soft);
   --color-input: var(--color-rule-soft);
   --color-ring: var(--color-steel);
@@ -132,6 +151,42 @@
   }
 }
 
+/*
+  Which arm of every light-dark() the page uses. `data-theme` is stamped on
+  <html> by the root layout from a cookie the Appearance setting writes:
+  "dark" and "light" are explicit choices, and "system" stamps nothing at all
+  so the phone decides. Reading it on the server means the first paint is
+  already the right theme — there is no flash to script away.
+*/
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* An explicit Light still wins over a dark phone. */
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+
+/* For the rare rule that needs to differ by more than a color value. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) { @slot; }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) { @slot; }
+  }
+}
+
+/* Deeper under a dark ground, where a soft grey shadow would not read. */
+:root[data-theme="dark"] { --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.55); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.55); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root { --duration-fast: 0ms; --duration-base: 0ms; --duration-roll: 0ms; }
 }
@@ -177,7 +232,7 @@
   }
   ::selection {
     background-color: var(--color-safety);
-    color: var(--color-stencil);
+    color: var(--color-on-safety);
   }
 }
 

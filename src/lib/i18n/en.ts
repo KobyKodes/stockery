@@ -13,6 +13,12 @@ export const en = {
   "lang.switchTo": "العربية",
   "lang.switchToAria": "Switch the site to Arabic",
 
+  // Appearance
+  "theme.label": "Appearance",
+  "theme.system": "System",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
+
   // Navigation
   "nav.main": "Main",
   "nav.storeroom": "Storeroom",
@@ -236,6 +242,8 @@ export const en = {
   "settings.categories": "Categories",
   "settings.categoriesIntro": "Categories are the filter chips above the storeroom list. The order here is the order they appear in.",
   "settings.presets": "Take presets",
+  "settings.appearance": "Appearance",
+  "settings.appearanceIntro": "Dark is easier on the eyes in a dim storeroom. System follows whatever this phone is set to.",
   "settings.deleteNoteLocation": "The items stay in the storeroom and move to Unassigned.",
   "settings.deleteNoteCategory": "The items stay in the storeroom and lose their category.",
 

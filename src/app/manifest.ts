@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { dirOf } from "@/lib/i18n/config";
 import { getI18n } from "@/lib/i18n/server";
-import { THEME_COLOR } from "@/lib/theme";
+import { THEME_COLOR_LIGHT } from "@/lib/theme";
 
 // What the phone reads when the app is added to the home screen. The locale
 // cookie is already read on every render, so the manifest speaks whichever
@@ -22,8 +22,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: THEME_COLOR,
-    theme_color: THEME_COLOR,
+    background_color: THEME_COLOR_LIGHT,
+    theme_color: THEME_COLOR_LIGHT,
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

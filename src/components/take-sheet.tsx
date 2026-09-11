@@ -21,7 +21,7 @@ export function TakeSheet({ item, presets, onOpenChange, onChange }: Props) {
   return (
     <DialogPrimitive.Root open={item !== null} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-40 bg-stencil/40 fade-enter" />
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-40 bg-scrim fade-enter" />
         <DialogPrimitive.Popup
           className="fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-y-auto bg-paper px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-sheet outline-none sheet-enter desk:inset-y-0 desk:end-0 desk:start-auto desk:w-[26rem] desk:max-h-none desk:px-6 desk:pt-4 desk:panel-enter"
           aria-describedby={undefined}

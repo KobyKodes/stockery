@@ -43,7 +43,7 @@ export function AppNav({ reorderCount }: { reorderCount: number }) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex h-tap items-center gap-2 rounded-control px-3 text-base font-semibold",
-                    active ? "bg-safety text-stencil" : "text-stencil hover:bg-paper",
+                    active ? "bg-safety text-on-safety" : "text-stencil hover:bg-paper",
                   )}
                 >
                   {t(label)}
@@ -91,7 +91,7 @@ export function AppNav({ reorderCount }: { reorderCount: number }) {
                     active ? "text-stencil" : "text-stencil-muted",
                   )}
                 >
-                  <span className={cn("flex h-6 w-10 items-center justify-center rounded-control", active && "bg-safety")}>
+                  <span className={cn("flex h-6 w-10 items-center justify-center rounded-control", active && "bg-safety text-on-safety")}>
                     <Icon aria-hidden className="size-5" />
                   </span>
                   <span className="max-w-full truncate px-1">

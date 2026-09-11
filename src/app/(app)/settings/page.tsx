@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { NameList } from "@/components/settings/name-list";
 import { PresetEditor } from "@/components/settings/preset-editor";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { getT } from "@/lib/i18n/server";
 import { prisma } from "@/lib/prisma";
 import { getTakePresets } from "@/lib/settings";
+import { getTheme } from "@/lib/theme-server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -11,8 +13,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SettingsPage() {
-  const [t, locations, categories, presets] = await Promise.all([
+  const [t, theme, locations, categories, presets] = await Promise.all([
     getT(),
+    getTheme(),
     prisma.location.findMany({
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true, sortOrder: true, _count: { select: { items: true } } },
@@ -45,6 +48,14 @@ export default async function SettingsPage() {
         </h2>
         <p className="max-w-prose text-base text-stencil-muted">{t("settings.categoriesIntro")}</p>
         <NameList rows={shape(categories)} endpoint="/api/categories" kind="category" />
+      </section>
+
+      <section aria-labelledby="appearance" className="flex flex-col gap-3">
+        <h2 id="appearance" className="rule-heavy pt-3 text-lg">
+          {t("settings.appearance")}
+        </h2>
+        <p className="max-w-prose text-base text-stencil-muted">{t("settings.appearanceIntro")}</p>
+        <ThemeToggle theme={theme} />
       </section>
 
       <section aria-labelledby="presets" className="flex flex-col gap-3">

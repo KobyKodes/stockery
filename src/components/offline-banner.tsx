@@ -34,7 +34,7 @@ export function OnlineProvider({ children }: { children: ReactNode }) {
   return (
     <OnlineContext.Provider value={online}>
       {online ? null : (
-        <div role="status" className="sticky top-14 z-40 flex items-center gap-3 bg-bay-red px-4 py-2 text-paper md:px-6">
+        <div role="status" className="sticky top-14 z-40 flex items-center gap-3 bg-bay-red px-4 py-2 text-on-bay-red md:px-6">
           <WifiOff aria-hidden className="size-5 shrink-0" />
           <p className="text-base">{t("common.offline")}</p>
         </div>

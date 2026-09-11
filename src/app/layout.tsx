@@ -3,7 +3,8 @@ import { Barlow, Barlow_Condensed, Cairo, IBM_Plex_Sans_Arabic } from "next/font
 import { dirOf } from "@/lib/i18n/config";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { getI18n } from "@/lib/i18n/server";
-import { THEME_COLOR } from "@/lib/theme";
+import { themeAttr, themeColorFor } from "@/lib/theme";
+import { getTheme } from "@/lib/theme-server";
 import "./globals.css";
 
 const barlow = Barlow({
@@ -54,19 +55,24 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const viewport: Viewport = {
-  themeColor: THEME_COLOR,
-  width: "device-width",
-  initialScale: 1,
-};
+// The browser chrome has to match the theme the page is about to paint, so
+// this reads the same cookie the layout does.
+export async function generateViewport(): Promise<Viewport> {
+  return {
+    themeColor: themeColorFor(await getTheme()),
+    width: "device-width",
+    initialScale: 1,
+  };
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const { locale } = await getI18n();
+  const [{ locale }, theme] = await Promise.all([getI18n(), getTheme()]);
 
   return (
     <html
       lang={locale}
       dir={dirOf(locale)}
+      data-theme={themeAttr(theme)}
       className={`${barlow.variable} ${barlowCondensed.variable} ${plexArabic.variable} ${cairo.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">

@@ -12,6 +12,12 @@ export const ar: Dictionary = {
   "lang.switchTo": "English",
   "lang.switchToAria": "تبديل الموقع إلى الإنجليزية",
 
+  // Appearance
+  "theme.label": "المظهر",
+  "theme.system": "النظام",
+  "theme.light": "فاتح",
+  "theme.dark": "داكن",
+
   // Navigation
   "nav.main": "الرئيسية",
   "nav.storeroom": "المخزن",
@@ -263,6 +269,8 @@ export const ar: Dictionary = {
   "settings.categories": "الفئات",
   "settings.categoriesIntro": "الفئات هي أزرار التصفية فوق قائمة المخزن. الترتيب هنا هو ترتيب ظهورها.",
   "settings.presets": "كميات الأخذ السريعة",
+  "settings.appearance": "المظهر",
+  "settings.appearanceIntro": "المظهر الداكن أرفق بالعين في المخزن الخافت الإضاءة. وخيار «النظام» يتبع إعداد هذا الجهاز.",
   "settings.deleteNoteLocation": "تبقى الأصناف في المخزن وتنتقل إلى «غير مخصص».",
   "settings.deleteNoteCategory": "تبقى الأصناف في المخزن وتفقد فئتها.",
 

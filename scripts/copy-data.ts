@@ -27,10 +27,44 @@ function required(name: string): string {
   return value;
 }
 
+/// Catches the string that is not a connection string at all - a placeholder
+/// left unreplaced, a fragment of a pasted command - before Prisma reports it
+/// three steps later as an unreachable host with a nonsense name.
+function connectionString(name: string): string {
+  const value = required(name);
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${name} is not a connection string: ${JSON.stringify(value.slice(0, 40))}...`);
+  }
+  if (!/^postgres(ql)?:$/.test(url.protocol)) {
+    throw new Error(`${name} must start with postgresql:// - got ${url.protocol}//`);
+  }
+  if (!url.hostname) throw new Error(`${name} has no host`);
+  return value;
+}
+
+/// Which database this string actually reaches, with the password left out.
+/// Neon puts the branch in the hostname (ep-xxx...), so this is what to
+/// compare against DATABASE_URL in the Render dashboard: copying into the
+/// right-looking URL for the wrong branch leaves the deployed app empty.
+function describe(url: string): string {
+  try {
+    const { hostname, port, pathname, username } = new URL(url);
+    return `${username}@${hostname}${port ? `:${port}` : ""}${pathname}`;
+  } catch {
+    return "<unparseable connection string>";
+  }
+}
+
 async function main() {
-  const sourceUrl = required("SOURCE_DATABASE_URL");
-  const targetUrl = required("TARGET_DATABASE_URL");
+  const sourceUrl = connectionString("SOURCE_DATABASE_URL");
+  const targetUrl = connectionString("TARGET_DATABASE_URL");
   if (sourceUrl === targetUrl) throw new Error("source and target are the same database");
+
+  console.log("source:", describe(sourceUrl));
+  console.log("target:", describe(targetUrl));
 
   const source = client(sourceUrl);
   const target = client(targetUrl);
@@ -48,6 +82,11 @@ async function main() {
       `source: ${categories.length} categories, ${locations.length} locations, ${items.length} items, ` +
         `${movements.length} movements, ${reorder.length} reorder entries, ${settings.length} settings`,
     );
+
+    // Ask the target itself what it is, rather than trusting the string.
+    const [identity] = await target.$queryRaw<{ db: string; user: string }[]>`
+      select current_database() as db, current_user as "user"`;
+    console.log(`target reports: database ${identity.db}, user ${identity.user}`);
 
     const before = await counts(target);
     console.log("target before:", before);

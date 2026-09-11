@@ -9,10 +9,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "border-safety bg-safety text-stencil active:bg-safety-deep active:border-safety-deep",
+        primary: "border-safety bg-safety text-on-safety active:bg-safety-deep active:border-safety-deep",
         secondary: "border-stencil bg-transparent text-stencil active:bg-paper",
         ghost: "border-transparent bg-transparent text-stencil active:bg-paper",
-        destructive: "border-bay-red bg-bay-red text-paper active:opacity-90",
+        destructive: "border-bay-red bg-bay-red text-on-bay-red active:opacity-90",
         link: "h-auto border-transparent bg-transparent px-0 text-steel underline-offset-4 hover:underline disabled:bg-transparent disabled:border-transparent",
       },
       size: {
