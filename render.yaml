@@ -3,6 +3,9 @@ services:
     name: stockery
     runtime: node
     plan: free
+    # Locked at creation and not changeable afterwards: a different region
+    # means a new service. Frankfurt to sit near the Neon project.
+    region: frankfurt
     buildCommand: npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build
     startCommand: npm start
     envVars:
