@@ -8,6 +8,10 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      # Neon's unpooled host (same URL without `-pooler`). Only the Prisma CLI
+      # uses it; migrations cannot run through the connection pooler.
+      - key: DIRECT_URL
+        sync: false
       - key: AUTH_SECRET
         sync: false
       - key: ADMIN_USERNAME
