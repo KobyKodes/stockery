@@ -6,7 +6,12 @@ services:
     # Locked at creation and not changeable afterwards: a different region
     # means a new service. Frankfurt to sit near the Neon project.
     region: frankfurt
-    buildCommand: npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build
+    # `prisma generate` runs from package.json's postinstall, and the build no
+    # longer type-checks the test files, so plain `npm ci` is enough even with
+    # NODE_ENV=production omitting devDependencies. Only the migration step has
+    # to be spelled out here - keep this in step with the Build Command set on
+    # the service in the dashboard, which is what actually runs.
+    buildCommand: npm ci && npx prisma migrate deploy && npm run build
     startCommand: npm start
     envVars:
       - key: DATABASE_URL

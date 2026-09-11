@@ -1,0 +1,12 @@
+// The test files and the Vitest config, which tsconfig.json leaves out so a
+// production build never needs devDependencies. `npm run typecheck` runs this
+// as well, so they are still checked on a machine that has Vitest installed.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals"],
+    "incremental": false
+  },
+  "include": ["**/*.test.ts", "vitest.config.ts", "src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

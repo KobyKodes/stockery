@@ -30,5 +30,10 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // The test files and the Vitest config import from "vitest", which is a
+  // devDependency. Render sets NODE_ENV=production, npm honours that by
+  // omitting devDependencies, and `next build` type-checks everything it is
+  // given - so leaving them in here fails the deploy on a module the server
+  // never loads. tsconfig.test.json covers them locally instead.
+  "exclude": ["node_modules", "**/*.test.ts", "vitest.config.ts"]
 }
