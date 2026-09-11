@@ -1,26 +1,190 @@
 @import "tailwindcss";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  Stockery design tokens. Every color, size, rule and duration used by a
+  component comes from here. Raw hex outside this file is a build failure.
+  See docs/design-plan.md for the reasoning behind each value.
+*/
+@theme {
+  /* color: the six named colors */
+  --color-concrete: #E9E7E1;
+  --color-paper: #F7F6F2;
+  --color-stencil: #14181C;
+  --color-stencil-muted: #4B5259;
+  --color-safety: #FFC72C;
+  --color-safety-deep: #E0A800;
+  --color-safety-ink: #8A6400;
+  --color-bay-red: #C5213A;
+  --color-steel: #3D5F91;
+  --color-rule: #14181C;
+  --color-rule-soft: #C9C6BE;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* semantic stock status: fills (bars, marks) */
+  --color-status-ok: var(--color-stencil);
+  --color-status-low: var(--color-safety);
+  --color-status-out: var(--color-bay-red);
+  /* semantic stock status: text (numerals, words) */
+  --color-status-ok-ink: var(--color-stencil);
+  --color-status-low-ink: var(--color-safety-ink);
+  --color-status-out-ink: var(--color-bay-red);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* shadcn semantic names, mapped onto the tokens above */
+  --color-background: var(--color-concrete);
+  --color-foreground: var(--color-stencil);
+  --color-card: var(--color-paper);
+  --color-card-foreground: var(--color-stencil);
+  --color-popover: var(--color-paper);
+  --color-popover-foreground: var(--color-stencil);
+  --color-primary: var(--color-safety);
+  --color-primary-foreground: var(--color-stencil);
+  --color-secondary: var(--color-paper);
+  --color-secondary-foreground: var(--color-stencil);
+  --color-muted: var(--color-paper);
+  --color-muted-foreground: var(--color-stencil-muted);
+  --color-accent: var(--color-paper);
+  --color-accent-foreground: var(--color-stencil);
+  --color-destructive: var(--color-bay-red);
+  --color-destructive-foreground: var(--color-paper);
+  --color-border: var(--color-rule-soft);
+  --color-input: var(--color-rule-soft);
+  --color-ring: var(--color-steel);
+
+  /* type */
+  --font-display: var(--font-barlow-condensed), "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: var(--font-barlow), "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
+  --text-xs: 0.875rem;   /* 14 */
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.875rem;   /* alias so stock shadcn classes stay on-scale */
+  --text-sm--line-height: 1.45;
+  --text-base: 1rem;     /* 16 */
+  --text-base--line-height: 1.45;
+  --text-lg: 1.25rem;    /* 20 */
+  --text-lg--line-height: 1.3;
+  --text-xl: 1.75rem;    /* 28 */
+  --text-xl--line-height: 1.1;
+  --text-2xl: 2.75rem;   /* 44 */
+  --text-2xl--line-height: 0.95;
+  --text-3xl: 4.5rem;    /* 72 */
+  --text-3xl--line-height: 0.95;
+  --leading-display: 0.95;
+  --leading-body: 1.45;
+
+  /* space (4px base) */
+  --spacing-1: 4px;  --spacing-2: 8px;  --spacing-3: 12px;
+  --spacing-4: 16px; --spacing-6: 24px; --spacing-8: 32px;
+  --spacing-12: 48px;
+
+  /* rules and radius */
+  --rule-heavy: 3px;
+  --rule-hair: 1px;
+  --radius-control: 4px;
+  --radius-none: 0px;
+  /* shadcn radius scale, pinned so nothing rounds past 4px */
+  --radius: 4px;
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
+  --radius-4xl: 4px;
+
+  /* elevation: one value only */
+  --shadow-sheet: 0 -8px 24px rgba(20, 24, 28, 0.18);
+
+  /* layout */
+  --width-content: 72rem;
+  --container-content: 72rem;
+  --container-prose: 40rem;
+  --height-row: 56px;       /* desktop table row */
+  --height-row-touch: 64px; /* mobile row, thumb-safe */
+  --height-tap: 44px;       /* minimum tap target */
+  --breakpoint-desk: 900px; /* list switches from phone rows to table rows */
+
+  /* motion */
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+  --duration-roll: 400ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* keyframes: every one of these answers a user action */
+  @keyframes row-flash {
+    from { background-color: var(--color-safety); }
+    to { background-color: transparent; }
+  }
+  @keyframes sheet-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes panel-in {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration-fast: 0ms; --duration-base: 0ms; --duration-roll: 0ms; }
+}
+
+@layer base {
+  * {
+    border-color: var(--color-rule-soft);
+    outline-color: var(--color-steel);
+  }
+  html {
+    font-family: var(--font-body);
+    line-height: var(--leading-body);
+    background-color: var(--color-concrete);
+    color: var(--color-stencil);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-color: var(--color-concrete);
+    color: var(--color-stencil);
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    line-height: var(--leading-display);
+    font-weight: 700;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-steel);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background-color: var(--color-safety);
+    color: var(--color-stencil);
+  }
+}
+
+/* Numerals: the one bold element. Tabular figures so columns align. */
+@utility numeral {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: var(--leading-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A heavy rule means "new shelf". A hairline means "next item". */
+@utility rule-heavy {
+  border-top: var(--rule-heavy) solid var(--color-rule);
+}
+@utility rule-hair {
+  border-top: var(--rule-hair) solid var(--color-rule-soft);
+}
+
+@utility flash {
+  animation: row-flash var(--duration-roll) var(--ease-out) both;
 }
