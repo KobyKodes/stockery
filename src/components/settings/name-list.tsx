@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import { useOnline } from "@/components/offline-banner";
 import { ReorderableList } from "@/components/settings/reorderable-list";
 import { useToast } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
   const [editingName, setEditingName] = useState("");
   const [deleting, setDeleting] = useState<NamedRow | null>(null);
   const [busy, setBusy] = useState(false);
+  const online = useOnline();
   const [error, setError] = useState("");
 
   function fail(e: unknown, fallback: string) {
@@ -180,7 +182,7 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
           maxLength={40}
           onChange={(e) => setAdding(e.target.value)}
         />
-        <Button type="submit" disabled={busy || !adding.trim()}>
+        <Button type="submit" disabled={busy || !online || !adding.trim()}>
           Add {noun}
         </Button>
       </form>
@@ -201,7 +203,7 @@ export function NameList({ rows: initial, endpoint, noun, deleteNote }: Props) {
             <Button variant="ghost" onClick={() => setDeleting(null)}>
               Keep it
             </Button>
-            <Button variant="destructive" disabled={busy} onClick={() => deleting && void remove(deleting)}>
+            <Button variant="destructive" disabled={busy || !online} onClick={() => deleting && void remove(deleting)}>
               Delete {deleting?.name}
             </Button>
           </DialogFooter>

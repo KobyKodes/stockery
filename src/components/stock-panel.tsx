@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useOnline } from "@/components/offline-banner";
 import { ItemThumb } from "@/components/item-thumb";
 import { QuantityNumeral } from "@/components/quantity-numeral";
 import { StockBar } from "@/components/stock-bar";
@@ -51,6 +52,8 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
   const [field, setField] = useState("");
   const [inPacks, setInPacks] = useState(false);
   const [busy, setBusy] = useState(false);
+  const online = useOnline();
+  const blocked = busy || !online;
   const [notice, setNotice] = useState<Notice | null>(null);
   const [error, setError] = useState("");
   const fieldRef = useRef<HTMLInputElement>(null);
@@ -149,7 +152,7 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
           <>
             <span>{notice.text}</span>
             {notice.undoId ? (
-              <Button variant="link" size="sm" disabled={busy} onClick={() => void undo(notice.undoId!)}>
+              <Button variant="link" size="sm" disabled={blocked} onClick={() => void undo(notice.undoId!)}>
                 Undo
               </Button>
             ) : null}
@@ -195,7 +198,7 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
 
       <div role="group" aria-label={`${verb} presets`} className="grid grid-cols-4 gap-2 desk:grid-cols-5">
         {presets.map((n) => (
-          <Button key={n} variant={presetVariant} disabled={busy} onClick={() => void act(mode, n)} className="tabular">
+          <Button key={n} variant={presetVariant} disabled={blocked} onClick={() => void act(mode, n)} className="tabular">
             {sign}
             {n}
           </Button>
@@ -203,7 +206,7 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
         {hasPacks ? (
           <Button
             variant={presetVariant}
-            disabled={busy}
+            disabled={blocked}
             onClick={() => void act(mode, packSize)}
             className="col-span-2 tabular desk:col-span-1"
           >
@@ -248,7 +251,7 @@ export function StockPanel({ item: initial, presets, onChange, showHeader = true
             </div>
           ) : null}
           {/* Outlined, so the yellow presets stay the only bright thing here. */}
-          <Button type="submit" variant="secondary" disabled={busy || fieldUnits < 1} className="ml-auto">
+          <Button type="submit" variant="secondary" disabled={blocked || fieldUnits < 1} className="ml-auto">
             {verb} {fieldUnits > 0 ? fieldUnits : ""}
           </Button>
         </div>

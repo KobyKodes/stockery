@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useOnline } from "@/components/offline-banner";
 import { useToast } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ export function PresetEditor({ presets: initial }: { presets: number[] }) {
   const [presets, setPresets] = useState(initial);
   const [adding, setAdding] = useState("");
   const [busy, setBusy] = useState(false);
+  const online = useOnline();
   const [error, setError] = useState("");
 
   async function save(next: number[]) {
@@ -76,7 +78,7 @@ export function PresetEditor({ presets: initial }: { presets: number[] }) {
           value={adding}
           onChange={(e) => setAdding(e.target.value)}
         />
-        <Button type="submit" disabled={busy || presets.length >= MAX_PRESETS || !adding.trim()}>
+        <Button type="submit" disabled={busy || !online || presets.length >= MAX_PRESETS || !adding.trim()}>
           Add preset
         </Button>
       </form>

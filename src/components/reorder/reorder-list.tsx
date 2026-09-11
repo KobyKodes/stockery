@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardCopy, Plus, X } from "lucide-react";
+import { useOnline } from "@/components/offline-banner";
 import { ItemThumb } from "@/components/item-thumb";
 import { useToast } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
 
   const [adding, setAdding] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const online = useOnline();
   const [error, setError] = useState("");
   const qtyTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
@@ -147,7 +149,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
               </option>
             ))}
           </NativeSelect>
-          <Button type="submit" disabled={!adding}>
+          <Button type="submit" disabled={!adding || !online}>
             <Plus aria-hidden />
             Add item
           </Button>
@@ -177,7 +179,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
               <Row
                 key={row.id}
                 row={row}
-                busy={busyId === row.id}
+                busy={busyId === row.id || !online}
                 onCheck={(checked) => void patch(row.id, { checked })}
                 onQty={(v) => setQty(row.id, v)}
                 onRemove={() => void remove(row)}
@@ -198,7 +200,7 @@ export function ReorderList({ entries: initial, addable }: Props) {
               <Row
                 key={row.id}
                 row={row}
-                busy={busyId === row.id}
+                busy={busyId === row.id || !online}
                 onCheck={(checked) => void patch(row.id, { checked })}
                 onQty={(v) => setQty(row.id, v)}
                 onRemove={() => void remove(row)}

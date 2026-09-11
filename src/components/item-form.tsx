@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, X } from "lucide-react";
+import { useOnline } from "@/components/offline-banner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -67,6 +68,7 @@ export function ItemForm({ item, categories: initialCategories, locations: initi
   const [categories, setCategories] = useState(initialCategories);
   const [locations, setLocations] = useState(initialLocations);
   const [busy, setBusy] = useState(false);
+  const online = useOnline();
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -305,7 +307,7 @@ export function ItemForm({ item, categories: initialCategories, locations: initi
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3 rule-hair pt-4">
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy || !online}>
           {busy ? "Saving" : "Save item"}
         </Button>
         <Button type="button" variant="ghost" onClick={() => router.back()}>
@@ -331,7 +333,7 @@ export function ItemForm({ item, categories: initialCategories, locations: initi
               <Button type="button" variant="ghost" onClick={() => setConfirmDelete(false)}>
                 Keep it
               </Button>
-              <Button type="button" variant="destructive" disabled={busy} onClick={() => void onDelete()}>
+              <Button type="button" variant="destructive" disabled={busy || !online} onClick={() => void onDelete()}>
                 Delete {item.name}
               </Button>
             </DialogFooter>

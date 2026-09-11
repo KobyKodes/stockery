@@ -107,3 +107,19 @@ Screens: `phase-5-desktop.png`, `phase-5-mobile.png`.
 Behaviour checked in the browser and against the database: taking an item below its threshold adds it to the list automatically, and receiving it back removes that automatic row; ticking a row moves it to Bought; Received creates a RECEIVE movement noted "From the reorder list", restocks by the requested amount and clears the row; Copy list puts a plain-text order on the clipboard.
 
 Also fixed here: on a phone the row wrapped to three lines with the pack wording truncated to "3 slee…". The wording now sits under the item name on phones and beside the field on desktop.
+
+## Phase 6: offline, deploy, README
+
+Screens: `phase-6-offline-desktop.png`.
+
+- **Does the quantity numeral dominate?** Unchanged from phase 3.
+- **Is safety yellow anywhere other than primary actions and low status?** No. The offline banner is bay-red, which is the only other signal colour and is reserved for out of stock and destructive actions; being unable to save belongs in that family.
+- **Anything rounded more than 4px?** No.
+- **All-caps outside the wordmark and aisle headings?** None.
+- **Tap targets ≥ 44px on mobile?** Yes, since the tap tokens were fixed in phase 5.
+- **Horizontal scroll at 390px?** No.
+- **Console:** clean with the network throttled to Offline.
+
+Behaviour checked in the browser with DevTools set to Offline: the banner appears under the nav reading "You're offline. Changes won't save until you're back on Wi-Fi.", and every control that writes (take and receive presets, Undo, Save item, Delete item, Finish count, Received, Add location, Add category, Add preset) is disabled until the connection returns. The banner is a live region, so it is announced rather than only seen.
+
+Not finished in this pass, and why: the production build and the Lighthouse run could not be completed. A second session began a nested-location refactor (stores holding shelves, `Location.parentId`) in the same working tree while this phase was in progress. The Prisma schema carries the new relation but no migration has been generated for it yet, so `tsc` fails in `src/lib/locations.ts`, `src/lib/items.ts` and `prisma/seed.ts`, and `next build` stops at the type check. The login page's own build error, `useSearchParams` used without a Suspense boundary, was a real defect and is fixed.
