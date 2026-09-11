@@ -52,3 +52,22 @@ Screens: `phase-2-desktop.png`, `phase-2-mobile.png`, `phase-2-form-mobile.png`,
 - **Console:** three Base UI warnings on the first load (a Button rendered as a Link without `nativeButton={false}`), fixed in the Button component. A DevTools issue for form fields without a name: fixed by naming the search, location select and the units input. No errors after the fixes.
 
 Other fixes from this pass: the threshold column wrapped for "3,000 napkins", so it is wider and truncates; "each" no longer pluralises to "eaches"; the detail page's date column no longer wraps.
+
+## Phase 3: take and receive
+
+Screens: `phase-3-desktop.png`, `phase-3-undo-desktop.png`, `phase-3-mobile.png`, `phase-3-sheet-mobile.png`.
+
+- **Does the quantity numeral dominate?** More than anywhere else. The sheet's 72px numeral is the largest thing on screen and rolls to its new value after each take, which is exactly where the eye already is.
+- **Is safety yellow anywhere other than primary actions and low status?** The take presets are yellow because they are the primary action, which is what the design plan calls for. The receive presets are stencil outlines, so the two modes are told apart by weight rather than by a second colour. The submit button next to the amount field was yellow too; it is now an outline, because a disabled yellow button reads as a broken one and five yellow buttons in a row was already the limit.
+- **Do numerals align vertically?** Yes in the list. In the sheet there is one numeral, so nothing to align.
+- **Anything rounded more than 4px?** No.
+- **All-caps outside the wordmark and aisle headings?** None. The sheet title is sentence case at 14px.
+- **SaaS card kit or other tells?** The sheet is a single paper surface with the one shadow value, sliding up from the bottom on a phone and in from the right on desktop. No cards inside it.
+- **Would a stranger recognise "Receiving Dock"?** Yes. Black-on-yellow preset buttons under a very large condensed numeral is the loading-bay vocabulary the brief asked for.
+- **Tap targets ≥ 44px on mobile?** Presets, the amount field, the pack toggle and the close button are all 44px or taller.
+- **Horizontal scroll at 390px?** No.
+- **Console:** clean through take, undo, clamp and receive.
+
+Behaviour checked in the browser, not just in code: one tap on a preset performs the take with no confirm step; the notice reads "Took 2. 3 left." with an Undo that calls the undo endpoint and restores the quantity; taking more than is on hand says "Only 2 were left, set to 0."; the Receive tab adds a full case; the row behind the sheet updates and flashes; the sheet stays open for the next tap; typing a digit anywhere focuses the amount field, Enter takes, Escape closes; focus is trapped in the sheet.
+
+Fix made after this critique: the digit shortcut was bound to the panel element, so it did nothing while focus sat on the sheet's close button. It now listens on the document and ignores events from other fields.

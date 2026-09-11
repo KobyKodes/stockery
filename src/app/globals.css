@@ -186,6 +186,17 @@
   border-top: var(--rule-hair) solid var(--color-rule-soft);
 }
 
+/* The take sheet slides up on phones and in from the right on desktop. */
+@utility sheet-enter {
+  animation: sheet-up var(--duration-base) var(--ease-out) both;
+}
+@utility panel-enter {
+  animation: panel-in var(--duration-base) var(--ease-out) both;
+}
+@utility fade-enter {
+  animation: fade-in var(--duration-base) var(--ease-out) both;
+}
+
 @utility flash {
   animation: row-flash var(--duration-roll) var(--ease-out) both;
 }

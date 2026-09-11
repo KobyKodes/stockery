@@ -87,3 +87,11 @@ model ReorderEntry {
   addedAuto    Boolean  @default(true) // false if the client added it by hand
   createdAt    DateTime @default(now())
 }
+
+/// App-wide preferences the client can change in Settings, such as the take
+/// presets. One row per key; values are small JSON.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}

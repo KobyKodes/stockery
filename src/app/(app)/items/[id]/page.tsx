@@ -5,12 +5,12 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ItemThumb } from "@/components/item-thumb";
-import { QuantityNumeral } from "@/components/quantity-numeral";
-import { StockBar } from "@/components/stock-bar";
+import { StockPanel } from "@/components/stock-panel";
 import { itemImageUrl } from "@/lib/image";
 import { getItemRow } from "@/lib/items";
 import { movementLabel } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
+import { getTakePresets } from "@/lib/settings";
 import { formatQuantity, pluralise } from "@/lib/stock";
 
 export async function generateMetadata({ params }: PageProps<"/items/[id]">): Promise<Metadata> {
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps<"/items/[id]">): Pr
 
 export default async function ItemDetailPage({ params }: PageProps<"/items/[id]">) {
   const { id } = await params;
-  const [item, movements] = await Promise.all([
+  const [item, movements, presets] = await Promise.all([
     getItemRow(id),
     prisma.stockMovement.findMany({
       where: { itemId: id },
@@ -29,6 +29,7 @@ export default async function ItemDetailPage({ params }: PageProps<"/items/[id]"
       take: 20,
       select: { id: true, type: true, delta: true, quantityAfter: true, note: true, createdAt: true },
     }),
+    getTakePresets(),
   ]);
   if (!item) notFound();
 
@@ -54,11 +55,8 @@ export default async function ItemDetailPage({ params }: PageProps<"/items/[id]"
 
       <div className="grid gap-8 desk:grid-cols-[minmax(0,1fr)_20rem]">
         <section className="flex flex-col gap-6">
-          <div>
-            <QuantityNumeral quantity={item.quantity} status={item.status} size="sheet" />
-            <p className="mt-1 text-base text-stencil-muted">{formatQuantity(item)} on hand</p>
-            <StockBar quantity={item.quantity} threshold={item.threshold} status={item.status} className="mt-2 max-w-xs" />
-          </div>
+          <StockPanel item={item} presets={presets} showHeader={false} className="max-w-md" />
+          <p className="text-base text-stencil-muted">{formatQuantity(item)} on hand</p>
 
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-base">
             {facts.map(([k, v]) => (
