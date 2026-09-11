@@ -11,6 +11,7 @@
     "test": "vitest run",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:copy": "tsx scripts/copy-data.ts",
     "hash-password": "node scripts/hash-password.mjs"
   },
   "dependencies": {
