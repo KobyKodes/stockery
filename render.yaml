@@ -8,8 +8,10 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
-      # Neon's unpooled host (same URL without `-pooler`). Only the Prisma CLI
-      # uses it; migrations cannot run through the connection pooler.
+      # Neon's unpooled connection string (Connect > untick "Connection
+      # pooling"), with &connect_timeout=30 so a suspended compute has time to
+      # wake. Only the Prisma CLI uses it; migrations cannot run through the
+      # connection pooler.
       - key: DIRECT_URL
         sync: false
       - key: AUTH_SECRET
