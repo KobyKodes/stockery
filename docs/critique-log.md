@@ -18,3 +18,20 @@ Screens: `phase-0-desktop.png`, `phase-0-mobile.png` (the `/tokens` route).
 - **Console:** no errors or warnings.
 
 Fixes made after this critique: none required. Noted for later phases: never set condensed below 20px; the small-size condensed rows on the tokens page exist only to show the scale.
+
+## Phase 1: data and auth
+
+Screens: `phase-1-login-desktop.png`, `phase-1-login-error.png`, `phase-1-desktop.png`, `phase-1-mobile.png`.
+
+- **Does the quantity numeral dominate?** No numerals on screen yet. The only display type is the wordmark and the page heading, both at 28px, which leaves headroom for the 44px numerals to come.
+- **Is safety yellow anywhere other than primary actions and low status?** The active nav item is filled safety (an active state, allowed by the brief). The sign-in button is safety. Nothing else.
+- **Do numerals align vertically?** Not applicable yet. The reorder count in the nav uses tabular figures.
+- **Anything rounded more than 4px?** No. Inputs, buttons, and the active nav block are all 4px.
+- **All-caps outside the wordmark and aisle headings?** None. Form labels are sentence case.
+- **SaaS card kit or other tells?** The login form has no card: the wordmark sits under a heavy rule and the fields sit straight on concrete. The error is a bay-red left rule with stencil text, not a pink pill.
+- **Would a stranger recognise "Receiving Dock"?** The heavy rule under the header and the condensed caps wordmark read as a sign on a beam. The yellow active block is a first hint of bay-number signage.
+- **Tap targets ≥ 44px on mobile?** Bottom tabs measure 56px tall; desktop nav links and the sign-in button are 44px.
+- **Horizontal scroll at 390px?** No: 390/390.
+- **Console:** no errors or warnings on login, the wrong-password path, or the storeroom shell.
+
+Fixes made after this critique: none. The Next.js dev-tools bubble overlaps the first tab in the mobile capture; it is a dev overlay and does not ship.

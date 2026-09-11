@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  items     Item[]
+  createdAt DateTime @default(now())
+}
+
+/// A physical place: "Shelf A", "Under sink", "Walk-in door". Drives the
+/// walk order during a full count, so sortOrder matters.
+model Location {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  items     Item[]
+  createdAt DateTime @default(now())
+}
+
+model Item {
+  id          String    @id @default(cuid())
+  name        String
+  description String? // optional, short; UI caps at 200 chars
+  categoryId  String?
+  locationId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  location    Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  quantity  Int     @default(0) // always in base units, never negative
+  unitName  String  @default("each") // "bag", "roll", "bottle", "each"
+  packSize  Int? // e.g. 12 if a case holds 12; null = no packs
+  packName  String? // "case", "box", "sleeve"
+  threshold Int     @default(0) // low when quantity <= threshold (base units)
+
+  image     Bytes?
+  imageType String? // "image/jpeg"
+
+  sortOrder Int      @default(0) // manual order within a location
+  archived  Boolean  @default(false) // soft delete; hard delete also allowed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements StockMovement[]
+  reorder   ReorderEntry?
+
+  @@index([locationId, sortOrder])
+  @@index([categoryId])
+}
+
+/// Every change to quantity is a movement. Needed for undo, for "received"
+/// on the reorder list, and for a history view later.
+model StockMovement {
+  id            String       @id @default(cuid())
+  itemId        String
+  item          Item         @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type          MovementType
+  delta         Int // signed, base units
+  quantityAfter Int // denormalised for cheap history reads
+  note          String?
+  createdAt     DateTime     @default(now())
+
+  @@index([itemId, createdAt])
+}
+
+enum MovementType {
+  TAKE // daily removal
+  RECEIVE // delivery / restock
+  COUNT // absolute count overwrite; delta = counted - previous
+  ADJUST // manual edit of quantity in the item form, or an undo
+}
+
+/// One row per item currently on the reorder list. Low-stock items are
+/// added automatically; the client can add or remove any item manually.
+model ReorderEntry {
+  id           String   @id @default(cuid())
+  itemId       String   @unique
+  item         Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  requestedQty Int // base units to order; defaults to threshold*2 - quantity, min packSize
+  checked      Boolean  @default(false) // ticked while shopping
+  addedAuto    Boolean  @default(true) // false if the client added it by hand
+  createdAt    DateTime @default(now())
+}
