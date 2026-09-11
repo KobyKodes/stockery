@@ -6,7 +6,9 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ItemRow } from "@/components/storeroom/item-row";
 import { RollingNumber } from "@/components/rolling-number";
+import { RearrangeGroup } from "@/components/storeroom/rearrange-group";
 import { TakeSheet } from "@/components/take-sheet";
+import { api } from "@/lib/fetcher";
 import { groupByLocation, runningLow, type ItemRow as ItemRowData } from "@/lib/item-view";
 
 type Props = {
@@ -30,6 +32,8 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
   const items = serverItems.map((i) => overrides[i.id] ?? i);
 
   const [selected, setSelected] = useState<ItemRowData | null>(null);
+  const [rearranging, setRearranging] = useState(false);
+  const [order, setOrder] = useState<Record<string, string[]>>({});
   const [flashId, setFlashId] = useState<string | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -50,8 +54,18 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
     });
   }
 
+  async function saveOrder(key: string, ids: string[]) {
+    setOrder((o) => ({ ...o, [key]: ids }));
+    await api("/api/items/reorder", { method: "POST", body: { orderedIds: ids } }).catch(() => {});
+  }
+
   const low = runningLow(items);
-  const groups = groupByLocation(items);
+  const groups = groupByLocation(items).map((g) => {
+    const ids = order[g.key];
+    if (!ids) return g;
+    const byId = new Map(g.items.map((i) => [i.id, i]));
+    return { ...g, items: ids.map((id) => byId.get(id)).filter((i): i is ItemRowData => !!i) };
+  });
   const selectedLive = selected ? (items.find((i) => i.id === selected.id) ?? selected) : null;
 
   if (items.length === 0) {
@@ -70,6 +84,19 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="-mb-6 flex items-center justify-between gap-4">
+        {rearranging ? (
+          <p className="text-base text-stencil-muted">Drag a row, or use the arrow keys, to match the shelf.</p>
+        ) : (
+          <span />
+        )}
+        <Button variant="ghost" size="sm" aria-pressed={rearranging} onClick={() => setRearranging((r) => !r)}>
+          {rearranging ? "Done rearranging" : "Rearrange"}
+        </Button>
+      </div>
+
+      {/* While rearranging, the strip would repeat rows out of shelf order. */}
+      {rearranging ? null : (
       <section aria-labelledby="running-low">
         <h2 id="running-low" className="rule-hair pt-3 font-body text-base font-semibold">
           {low.length === 0 ? (
@@ -88,6 +115,7 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
           </ul>
         ) : null}
       </section>
+      )}
 
       {groups.map((group) => (
         <section key={group.key} aria-labelledby={`group-${group.key}`}>
@@ -97,11 +125,15 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
           >
             {group.name}
           </h2>
-          <ul>
-            {group.items.map((item) => (
-              <ItemRow key={item.id} item={item} onTake={setSelected} flash={flashId === item.id} />
-            ))}
-          </ul>
+          {rearranging ? (
+            <RearrangeGroup items={group.items} onReorder={(ids) => void saveOrder(group.key, ids)} />
+          ) : (
+            <ul>
+              {group.items.map((item) => (
+                <ItemRow key={item.id} item={item} onTake={setSelected} flash={flashId === item.id} />
+              ))}
+            </ul>
+          )}
         </section>
       ))}
 

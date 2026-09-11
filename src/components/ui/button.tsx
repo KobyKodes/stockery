@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 // Buttons say what happens. Safety yellow is reserved for the primary action;
 // bay-red for destructive ones. Nothing here rounds past 4px.
 const buttonVariants = cva(
-  "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-control border font-body text-base font-semibold leading-none outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-steel disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
+  "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-control border font-body text-base font-semibold leading-none outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-steel disabled:pointer-events-none disabled:border-rule-soft disabled:bg-rule-soft disabled:text-stencil-muted [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -13,7 +13,7 @@ const buttonVariants = cva(
         secondary: "border-stencil bg-transparent text-stencil active:bg-paper",
         ghost: "border-transparent bg-transparent text-stencil active:bg-paper",
         destructive: "border-bay-red bg-bay-red text-paper active:opacity-90",
-        link: "h-auto border-transparent bg-transparent px-0 text-steel underline-offset-4 hover:underline",
+        link: "h-auto border-transparent bg-transparent px-0 text-steel underline-offset-4 hover:underline disabled:bg-transparent disabled:border-transparent",
       },
       size: {
         default: "h-tap px-4",

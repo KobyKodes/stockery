@@ -71,3 +71,20 @@ Screens: `phase-3-desktop.png`, `phase-3-undo-desktop.png`, `phase-3-mobile.png`
 Behaviour checked in the browser, not just in code: one tap on a preset performs the take with no confirm step; the notice reads "Took 2. 3 left." with an Undo that calls the undo endpoint and restores the quantity; taking more than is on hand says "Only 2 were left, set to 0."; the Receive tab adds a full case; the row behind the sheet updates and flashes; the sheet stays open for the next tap; typing a digit anywhere focuses the amount field, Enter takes, Escape closes; focus is trapped in the sheet.
 
 Fix made after this critique: the digit shortcut was bound to the panel element, so it did nothing while focus sat on the sheet's close button. It now listens on the document and ignores events from other fields.
+
+## Phase 4: full count, locations and categories
+
+Screens: `phase-4-desktop.png`, `phase-4-mobile.png`, `phase-4-summary-desktop.png`, `phase-4-settings-desktop.png`, `phase-4-settings-mobile.png`, `phase-4-rearrange-desktop.png`.
+
+- **Does the quantity numeral dominate?** On the phone count screen the entry field is now set in Barlow Condensed at 28px in a 56px-tall box, so the number being read off the shelf is the biggest thing on screen. It was a plain 16px field in the first capture, which made the most important number the quietest thing.
+- **Is safety yellow anywhere other than primary actions and low status?** No. Next item, Finish count, Add location, Add category and Add preset are the primary action of their screen or form. Disabled buttons were pale yellow, which read as broken, and are now a flat grey control.
+- **Do numerals align vertically?** Not in the first desktop count capture: items with packs have two fields and items without have one, so nothing lined up. The entry column is now a fixed width with the fields pushed to the right, so every row ends on the same edge.
+- **Anything rounded more than 4px?** No.
+- **All-caps outside the wordmark and aisle headings?** None. Settings headings are sentence case at 20px.
+- **SaaS card kit or other tells?** No. Both settings lists are hairline-separated rows under a heavy rule, matching the storeroom list.
+- **Would a stranger recognise "Receiving Dock"?** Settings is the quietest screen in the app, which is right. The count screen carries the direction through the big condensed figures.
+- **Tap targets ≥ 44px on mobile?** Drag handles, rename and delete buttons, and the count fields are all 44px or more.
+- **Horizontal scroll at 390px?** No.
+- **Console:** clean on the count walk and on settings.
+
+Behaviour checked in the browser: staged counts write nothing until Finish count, which posts only the changed items and shows "Counted 2 items, 2 changed" with the deltas, and the two movements appear in the database; leaving the page with staged values raises the browser's own warning and Stop counting asks first; adding a duplicate location answers "There's already a location called Cellar."; renaming, deleting and reordering all persist, with arrow keys as the keyboard path for drag; take presets add and remove and the take sheet picks them up.
