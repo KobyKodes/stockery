@@ -35,3 +35,20 @@ Screens: `phase-1-login-desktop.png`, `phase-1-login-error.png`, `phase-1-deskto
 - **Console:** no errors or warnings on login, the wrong-password path, or the storeroom shell.
 
 Fixes made after this critique: none. The Next.js dev-tools bubble overlaps the first tab in the mobile capture; it is a dev overlay and does not ship.
+
+## Phase 2: items and the list
+
+Screens: `phase-2-desktop.png`, `phase-2-mobile.png`, `phase-2-form-mobile.png`, `phase-2-detail-mobile.png`, `phase-2-delete-mobile.png`.
+
+- **Does the quantity numeral dominate?** Yes. On desktop the 44px condensed numerals are the first thing the eye lands on in every row; names are 16/600 and everything else is 14 muted. On the phone the numeral is still 44px and sits on the right of the two-line row.
+- **Is safety yellow anywhere other than primary actions and low status?** First capture: no. Every row had a yellow Take button, so yellow was on all 25 rows and meant nothing. Fixed: the row's Take is a stencil-outlined secondary and Edit is a ghost. Yellow now appears on Add item, the active nav item, and the low bars only.
+- **Do numerals align vertically?** First capture: no. The "low"/"out" word after the numeral pushed those digits left of the ok rows. Fixed by reserving a fixed-width word slot on every numeral, so the digits share one right edge down the whole page.
+- **Anything rounded more than 4px?** No. Rows and rules are square; controls are 4px.
+- **All-caps outside the wordmark and aisle headings?** None. Group headings (SHELF A, UNDER SINK) are the agreed aisle-sign use.
+- **SaaS card kit or other tells?** No cards. Rows are separated by hairlines, groups by 3px rules. The delete dialog is the one raised surface and it uses the single shadow value. The filter chips are 4px-radius outlines, not pills.
+- **Would a stranger recognise "Receiving Dock"?** The heavy rules with uppercase condensed shelf names read as aisle signs, and the numeral column reads as bay numbers. Closer than phase 1.
+- **Tap targets ≥ 44px on mobile?** Row tap area is 64px; the edit chevron is 44×64; filter buttons are 44px; chips are 36px tall (they sit in a scroll row and are the one exception, noted for the accessibility pass in phase 6).
+- **Horizontal scroll at 390px?** No: 390/390 on the list, the form, and the detail page.
+- **Console:** three Base UI warnings on the first load (a Button rendered as a Link without `nativeButton={false}`), fixed in the Button component. A DevTools issue for form fields without a name: fixed by naming the search, location select and the units input. No errors after the fixes.
+
+Other fixes from this pass: the threshold column wrapped for "3,000 napkins", so it is wider and truncates; "each" no longer pluralises to "eaches"; the detail page's date column no longer wraps.

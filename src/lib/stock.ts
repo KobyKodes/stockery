@@ -18,8 +18,10 @@ export function stockStatus(item: StockFields): StockStatus {
 }
 
 /** Plural for plain kitchen words: bag/bags, box/boxes, case/cases. */
+const UNCOUNTABLE = new Set(["each", "pair", "stock"]);
+
 export function pluralise(word: string, n: number): string {
-  if (n === 1) return word;
+  if (n === 1 || UNCOUNTABLE.has(word.trim().toLowerCase())) return word;
   if (/(s|x|z|ch|sh)$/i.test(word)) return `${word}es`;
   if (/[^aeiou]y$/i.test(word)) return `${word.slice(0, -1)}ies`;
   return `${word}s`;

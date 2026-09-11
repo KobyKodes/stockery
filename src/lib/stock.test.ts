@@ -35,7 +35,7 @@ describe("pluralise", () => {
     expect(pluralise("bag", 1)).toBe("bag");
     expect(pluralise("box", 3)).toBe("boxes");
     expect(pluralise("case", 2)).toBe("cases");
-    expect(pluralise("each", 2)).toBe("each".concat("es"));
+    expect(pluralise("each", 2)).toBe("each");
   });
 });
 
