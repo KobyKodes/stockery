@@ -88,3 +88,22 @@ Screens: `phase-4-desktop.png`, `phase-4-mobile.png`, `phase-4-summary-desktop.p
 - **Console:** clean on the count walk and on settings.
 
 Behaviour checked in the browser: staged counts write nothing until Finish count, which posts only the changed items and shows "Counted 2 items, 2 changed" with the deltas, and the two movements appear in the database; leaving the page with staged values raises the browser's own warning and Stop counting asks first; adding a duplicate location answers "There's already a location called Cellar."; renaming, deleting and reordering all persist, with arrow keys as the keyboard path for drag; take presets add and remove and the take sheet picks them up.
+
+## Phase 5: the reorder list
+
+Screens: `phase-5-desktop.png`, `phase-5-mobile.png`.
+
+- **Does the quantity numeral dominate?** There is no big numeral here on purpose. This screen is a shopping list, not a stock reading, so the order amount sits in a plain field and the item name leads.
+- **Is safety yellow appearing anywhere other than primary actions and low status?** It was on every row: each row had a yellow Received, which is nine bright buttons for an action you take once a delivery turns up. Received is now an outline until the row is ticked, so yellow marks exactly the rows whose delivery you are waiting on.
+- **Do numerals align vertically?** Yes on desktop. The amount fields and the pack wording share fixed columns, so the list reads down.
+- **Anything rounded more than 4px?** No.
+- **All-caps outside the wordmark and aisle headings?** "To buy" and "Bought" are set like aisle headings, because they are the same kind of divider in the same grammar as the storeroom list.
+- **SaaS card kit or other tells?** No cards, no badges. The checkbox is a square with a 4px radius.
+- **Would a stranger recognise "Receiving Dock"?** Yes, through the heavy rules, the condensed headings and the shared row grammar.
+- **Tap targets ≥ 44px on mobile?** They are now. The checkbox drew at 24px and the remove button at 22px, because `size-tap` was not a real utility: the theme defined `--height-tap` but no matching size token, so every icon button in the app was quietly collapsing to its icon. The token layer now defines the width and size variants as well, and the checkbox keeps a 24px box inside a 44px target.
+- **Horizontal scroll at 390px?** No.
+- **Console:** clean.
+
+Behaviour checked in the browser and against the database: taking an item below its threshold adds it to the list automatically, and receiving it back removes that automatic row; ticking a row moves it to Bought; Received creates a RECEIVE movement noted "From the reorder list", restocks by the requested amount and clears the row; Copy list puts a plain-text order on the clipboard.
+
+Also fixed here: on a phone the row wrapped to three lines with the pack wording truncated to "3 slee…". The wording now sits under the item name on phones and beside the field on desktop.

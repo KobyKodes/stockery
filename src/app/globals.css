@@ -103,6 +103,8 @@
   --height-row: 56px;       /* desktop table row */
   --height-row-touch: 64px; /* mobile row, thumb-safe */
   --height-tap: 44px;       /* minimum tap target */
+  --width-tap: 44px;
+  --size-tap: 44px;         /* so size-tap works as well as h-tap */
   --breakpoint-desk: 900px; /* list switches from phone rows to table rows */
 
   /* motion */

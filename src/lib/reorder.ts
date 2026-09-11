@@ -1,6 +1,9 @@
+import "server-only";
 import type { Prisma } from "@prisma/client";
+import { itemSelect, toItemRow } from "@/lib/items";
 import { prisma } from "@/lib/prisma";
 import { stockStatus, suggestedReorderQty } from "@/lib/stock";
+import type { ReorderRow } from "@/lib/reorder-view";
 
 type Tx = Prisma.TransactionClient;
 
@@ -27,4 +30,27 @@ export async function syncReorderEntry(itemId: string, tx: Tx = prisma) {
   if (status === "ok" && item.reorder?.addedAuto && !item.reorder.checked) {
     await tx.reorderEntry.delete({ where: { id: item.reorder.id } });
   }
+}
+
+/** The shopping list, item and all, in walk order. */
+export async function listReorder(): Promise<ReorderRow[]> {
+  const entries = await prisma.reorderEntry.findMany({
+    orderBy: [{ checked: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      requestedQty: true,
+      checked: true,
+      addedAuto: true,
+      createdAt: true,
+      item: { select: itemSelect },
+    },
+  });
+  return entries.map((e) => ({
+    id: e.id,
+    requestedQty: e.requestedQty,
+    checked: e.checked,
+    addedAuto: e.addedAuto,
+    createdAt: e.createdAt.toISOString(),
+    item: toItemRow(e.item),
+  }));
 }
