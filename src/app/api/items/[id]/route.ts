@@ -18,17 +18,20 @@ export const GET = handle<Ctx>(async (_request, { params }) => {
 export const PATCH = handle<Ctx>(async (request, { params }) => {
   const { id } = await params;
   const patch = await parseBody(request, itemPatch);
-  const existing = await prisma.item.findUnique({ where: { id }, select: { quantity: true, packSize: true } });
+  const existing = await prisma.item.findUnique({ where: { id }, select: { quantity: true, packSize: true, measure: true } });
   if (!existing) throw new ApiError(404, msg("error.itemMissing"));
   if (patch.locationId !== undefined) await assertAssignableLocation(patch.locationId);
 
   const updated = await prisma.$transaction(async (tx) => {
     const quantityChanged = patch.quantity !== undefined && patch.quantity !== existing.quantity;
-    const packSize = patch.packSize === undefined ? existing.packSize : patch.packSize;
+    // A weighed item is held in grams and never comes in packs.
+    const weighed = (patch.measure ?? existing.measure) === "WEIGHT";
+    const packSize = weighed ? null : patch.packSize === undefined ? existing.packSize : patch.packSize;
     const item = await tx.item.update({
       where: { id },
       data: {
         ...patch,
+        ...(weighed ? { unitName: "g", packSize: null } : {}),
         packName: packSize ? patch.packName : null,
         ...(quantityChanged
           ? {

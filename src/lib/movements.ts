@@ -43,7 +43,8 @@ async function record(itemId: string, type: MovementType, delta: number, note?: 
     const quantityAfter = Math.max(0, current.quantity + delta);
     const item = await tx.item.update({
       where: { id: itemId },
-      data: { quantity: quantityAfter },
+      // A delivery is what was on order, so receiving clears the ordered mark.
+      data: { quantity: quantityAfter, ...(type === "RECEIVE" ? { orderedAt: null } : {}) },
       select: itemSelect,
     });
     const movement = await tx.stockMovement.create({

@@ -1,16 +1,19 @@
 // Client-safe shapes and pure helpers for the storeroom list. No Prisma here:
 // this module is imported by client components.
-import type { StockStatus } from "@/lib/stock";
+import type { Measure, StockStatus } from "@/lib/stock";
 
 export type ItemRow = {
   id: string;
   name: string;
   description: string | null;
+  measure: Measure;
   quantity: number;
   unitName: string;
   packSize: number | null;
   packName: string | null;
   threshold: number;
+  /** ISO time the item was marked as ordered; null when nothing is on the way. */
+  orderedAt: string | null;
   sortOrder: number;
   archived: boolean;
   hasImage: boolean;

@@ -14,7 +14,7 @@ import { movementKey } from "@/lib/labels";
 import { resolveMessage } from "@/lib/i18n/message";
 import { prisma } from "@/lib/prisma";
 import { getTakePresets } from "@/lib/settings";
-import { formatQuantity, pluralise } from "@/lib/stock";
+import { formatQuantity, formatWeight, pluralise } from "@/lib/stock";
 
 export async function generateMetadata({ params }: PageProps<"/items/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -44,18 +44,29 @@ export default async function ItemDetailPage({ params }: PageProps<"/items/[id]"
   // same in both languages so the column still lines up.
   const dates = locale === "ar" ? arDates : enGB;
 
-  const facts: [string, string][] = [
-    [t("detail.location"), item.location?.name ?? t("common.unassigned")],
-    [t("detail.category"), item.category?.name ?? t("common.none")],
-    [t("detail.countedIn"), pluralise(item.unitName, 2, locale)],
-    [
-      t("detail.packs"),
-      item.packSize && item.packName
-        ? t("detail.packHolds", { pack: item.packName, count: item.packSize })
-        : t("detail.noPacks"),
-    ],
-    [t("detail.warnAt"), `${item.threshold} ${pluralise(item.unitName, item.threshold, locale)}`],
-  ];
+  // A weighed item reads in g or kg throughout, and packs don't apply to it.
+  const weighed = item.measure === "WEIGHT";
+  const show = (n: number) => (weighed ? formatWeight(n, locale) : String(n));
+
+  const facts: [string, string][] = weighed
+    ? [
+        [t("detail.location"), item.location?.name ?? t("common.unassigned")],
+        [t("detail.category"), item.category?.name ?? t("common.none")],
+        [t("detail.countedIn"), t("detail.weighed")],
+        [t("detail.warnAt"), formatWeight(item.threshold, locale)],
+      ]
+    : [
+        [t("detail.location"), item.location?.name ?? t("common.unassigned")],
+        [t("detail.category"), item.category?.name ?? t("common.none")],
+        [t("detail.countedIn"), pluralise(item.unitName, 2, locale)],
+        [
+          t("detail.packs"),
+          item.packSize && item.packName
+            ? t("detail.packHolds", { pack: item.packName, count: item.packSize })
+            : t("detail.noPacks"),
+        ],
+        [t("detail.warnAt"), `${item.threshold} ${pluralise(item.unitName, item.threshold, locale)}`],
+      ];
 
   return (
     <main className="flex flex-col gap-8">
@@ -129,8 +140,8 @@ export default async function ItemDetailPage({ params }: PageProps<"/items/[id]"
                         <span className="text-stencil-muted"> {resolveMessage(m.note, t)}</span>
                       ) : null}
                     </td>
-                    <td className="py-2 text-end tabular">{m.delta > 0 ? `+${m.delta}` : m.delta}</td>
-                    <td className="py-2 text-end font-semibold tabular">{m.quantityAfter}</td>
+                    <td className="py-2 text-end tabular">{m.delta > 0 ? `+${show(m.delta)}` : show(m.delta)}</td>
+                    <td className="py-2 text-end font-semibold tabular">{show(m.quantityAfter)}</td>
                   </tr>
                 );
               })}

@@ -82,12 +82,14 @@ export const ar: Dictionary = {
   "filters.allCategories": "كل الفئات",
 
   // A row in the storeroom list
-  "row.take": "أخذ",
   "row.edit": "تعديل",
   "row.ofThreshold": "من حد التنبيه {count}",
   "row.noThreshold": "بلا حد تنبيه",
   "row.takeAria": "أخذ {name}، المتبقي {quantity} {unit}",
   "row.editAria": "تعديل {name}",
+  "row.takeButton": "أخذ {name}",
+  "row.receiveButton": "استلام {name}",
+  "row.ordered": "تم الطلب",
 
   // Take and receive
   "stock.take": "أخذ",
@@ -102,27 +104,31 @@ export const ar: Dictionary = {
   "stock.undo": "تراجع",
   "stock.took": "تم أخذ {count}. المتبقي {left}.",
   "stock.tookClamped": "لم يتبقَ سوى {count}، وأصبح الرصيد صفراً.",
+  "stock.tookClampedWeight": "لم يتبقَ سوى {count}، وأصبح الرصيد صفراً.",
   "stock.received": "تم استلام {count}. المتوفر الآن {left}.",
   "stock.undone": "تم التراجع. المتبقي {count}.",
   "stock.saveFailed": "لم يتم الحفظ. حاول مرة أخرى.",
   "stock.undoFailed": "تعذّر التراجع عن ذلك.",
   "stock.packEquals": "{packs} {packUnit} = {units} {unit}",
   "stock.onePack": "{pack} واحدة",
+  "stock.markOrdered": "تعليم «تم الطلب»",
+  "stock.orderedNote": "تم الطلب. المزيد في الطريق.",
+  "stock.clearOrdered": "إلغاء العلامة",
+  "stock.markedOrdered": "تم تعليمه «تم الطلب» وأُزيل من قائمة إعادة الطلب.",
+  "stock.clearedOrdered": "أُلغيت علامة «تم الطلب».",
 
   // Quantity entry
   "packEntry.equals": "= {quantity} {unit}",
+  "weight.unitAria": "غرامات أم كيلوغرامات",
 
   // Full count
   "count.title": "جرد شامل",
   "count.intro": "امشِ على الرفوف بالترتيب وأدخل ما هو موجود فعلاً. لا يُحفظ شيء حتى تنهي الجرد.",
   "count.nothingToCount": "لا يوجد ما يُجرد بعد. أضف صنفاً أولاً.",
-  "count.position": "{index} من {total}",
-  "count.inLocation": "في {location}",
   "count.stop": "إيقاف الجرد",
-  "count.next": "الصنف التالي",
-  "count.skip": "تخطٍ",
   "count.finish": "إنهاء الجرد",
   "count.lastCount": "آخر جرد {quantity}",
+  "count.changedMark": "تغيّر",
   "count.nothingChangedYet": "لم يتغير شيء بعد.",
   "count.changed": {
     zero: "لم يتغير أي صنف.",
@@ -200,6 +206,7 @@ export const ar: Dictionary = {
   "detail.packs": "العبوات",
   "detail.packHolds": "{pack} واحدة تحوي {count}",
   "detail.noPacks": "لا يُباع في عبوات",
+  "detail.weighed": "الوزن (غ، كغ)",
   "detail.warnAt": "التنبيه عند الوصول إلى",
   "detail.history": {
     zero: "لا تغييرات",
@@ -230,6 +237,10 @@ export const ar: Dictionary = {
   "form.descriptionCount": "{count} من 200",
   "form.location": "الموقع",
   "form.category": "الفئة",
+  "form.measure": "يُقاس بـ",
+  "form.measureCount": "العدد",
+  "form.measureWeight": "الوزن",
+  "form.measureHint": "الوزن للبهارات وكل ما يُحفظ سائباً، بالغرام أو الكيلو.",
   "form.unitName": "الواحدة من هذا تُسمى",
   "form.unitHint": "كيس، لفة، زجاجة، حبة",
   "form.hasPacks": "يُباع في عبوات",
@@ -238,6 +249,7 @@ export const ar: Dictionary = {
   "form.quantity": "المتوفر الآن",
   "form.threshold": "التنبيه عند الوصول إلى",
   "form.thresholdHint": "سيتم تنبيهك عندما يتبقى {count} {unit} أو أقل.",
+  "form.thresholdHintWeight": "سيتم تنبيهك عندما يتبقى {amount} أو أقل.",
   "form.photo": "الصورة",
   "form.addPhoto": "إضافة صورة",
   "form.changePhoto": "تغيير الصورة",

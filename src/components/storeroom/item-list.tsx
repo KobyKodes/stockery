@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ItemRow } from "@/components/storeroom/item-row";
 import { RollingNumber } from "@/components/rolling-number";
 import { RearrangeGroup } from "@/components/storeroom/rearrange-group";
+import type { StockMode } from "@/components/stock-panel";
 import { TakeSheet } from "@/components/take-sheet";
 import { api } from "@/lib/fetcher";
 import { useT } from "@/lib/i18n/client";
@@ -33,7 +34,8 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
   }
   const items = serverItems.map((i) => overrides[i.id] ?? i);
 
-  const [selected, setSelected] = useState<ItemRowData | null>(null);
+  const [selected, setSelected] = useState<{ item: ItemRowData; mode: StockMode } | null>(null);
+  const open = (item: ItemRowData, mode: StockMode = "take") => setSelected({ item, mode });
   const [rearranging, setRearranging] = useState(false);
   const [order, setOrder] = useState<Record<string, string[]>>({});
   const [flashId, setFlashId] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
     const byId = new Map(g.items.map((i) => [i.id, i]));
     return { ...g, items: ids.map((id) => byId.get(id)).filter((i): i is ItemRowData => !!i) };
   });
-  const selectedLive = selected ? (items.find((i) => i.id === selected.id) ?? selected) : null;
+  const selectedLive = selected ? (items.find((i) => i.id === selected.item.id) ?? selected.item) : null;
 
   if (items.length === 0) {
     return filtered ? (
@@ -113,7 +115,7 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
         {low.length > 0 ? (
           <ul className="mt-2">
             {low.map((item) => (
-              <ItemRow key={item.id} item={item} onTake={setSelected} showLocation flash={flashId === item.id} />
+              <ItemRow key={item.id} item={item} onTake={open} showLocation flash={flashId === item.id} />
             ))}
           </ul>
         ) : null}
@@ -133,7 +135,7 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
           ) : (
             <ul>
               {group.items.map((item) => (
-                <ItemRow key={item.id} item={item} onTake={setSelected} flash={flashId === item.id} />
+                <ItemRow key={item.id} item={item} onTake={open} flash={flashId === item.id} />
               ))}
             </ul>
           )}
@@ -143,6 +145,7 @@ export function ItemList({ items: serverItems, presets, filtered }: Props) {
       <TakeSheet
         item={selectedLive}
         presets={presets}
+        mode={selected?.mode}
         onOpenChange={(open) => {
           if (!open) setSelected(null);
         }}

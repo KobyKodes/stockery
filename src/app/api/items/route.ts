@@ -21,6 +21,8 @@ export const POST = handle(async (request) => {
     select: { sortOrder: true },
   });
 
+  // A weighed item is held in grams and never comes in packs.
+  const weighed = input.measure === "WEIGHT";
   const created = await prisma.$transaction(async (tx) => {
     const item = await tx.item.create({
       data: {
@@ -28,10 +30,11 @@ export const POST = handle(async (request) => {
         description: input.description ?? null,
         categoryId: input.categoryId ?? null,
         locationId: input.locationId ?? null,
+        measure: input.measure,
         quantity: input.quantity,
-        unitName: input.unitName,
-        packSize: input.packSize ?? null,
-        packName: input.packSize ? (input.packName ?? null) : null,
+        unitName: weighed ? "g" : input.unitName,
+        packSize: weighed ? null : (input.packSize ?? null),
+        packName: !weighed && input.packSize ? (input.packName ?? null) : null,
         threshold: input.threshold,
         sortOrder: (last?.sortOrder ?? -1) + 1,
         movements: {

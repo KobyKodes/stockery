@@ -75,12 +75,14 @@ export const en = {
   "filters.allCategories": "All categories",
 
   // A row in the storeroom list
-  "row.take": "Take",
   "row.edit": "Edit",
   "row.ofThreshold": "of {count} threshold",
   "row.noThreshold": "no threshold",
   "row.takeAria": "Take {name}, {quantity} {unit} left",
   "row.editAria": "Edit {name}",
+  "row.takeButton": "Take {name}",
+  "row.receiveButton": "Receive {name}",
+  "row.ordered": "Ordered",
 
   // Take and receive
   "stock.take": "Take",
@@ -95,27 +97,31 @@ export const en = {
   "stock.undo": "Undo",
   "stock.took": "Took {count}. {left} left.",
   "stock.tookClamped": "Only {count} were left, set to 0.",
+  "stock.tookClampedWeight": "Only {count} was left, set to 0.",
   "stock.received": "Received {count}. {left} now.",
   "stock.undone": "Undone. {count} left.",
   "stock.saveFailed": "That didn't save. Try again.",
   "stock.undoFailed": "That couldn't be undone.",
   "stock.packEquals": "{packs} {packUnit} = {units} {unit}",
   "stock.onePack": "1 {pack}",
+  "stock.markOrdered": "Mark as ordered",
+  "stock.orderedNote": "Ordered. More is on the way.",
+  "stock.clearOrdered": "Unmark",
+  "stock.markedOrdered": "Marked as ordered. It's off the reorder list.",
+  "stock.clearedOrdered": "No longer marked as ordered.",
 
   // Quantity entry
   "packEntry.equals": "= {quantity} {unit}",
+  "weight.unitAria": "Grams or kilograms",
 
   // Full count
   "count.title": "Full count",
   "count.intro": "Walk the shelves in order and enter what is actually there. Nothing is saved until you finish.",
   "count.nothingToCount": "There is nothing to count yet. Add an item first.",
-  "count.position": "{index} of {total}",
-  "count.inLocation": "in {location}",
   "count.stop": "Stop counting",
-  "count.next": "Next item",
-  "count.skip": "Skip",
   "count.finish": "Finish count",
   "count.lastCount": "Last count {quantity}",
+  "count.changedMark": "Changed",
   "count.nothingChangedYet": "Nothing changed yet.",
   "count.changed": {
     one: "{count} item changed.",
@@ -177,6 +183,7 @@ export const en = {
   "detail.packs": "Packs",
   "detail.packHolds": "1 {pack} holds {count}",
   "detail.noPacks": "Not sold in packs",
+  "detail.weighed": "Weight (g, kg)",
   "detail.warnAt": "Warn when down to",
   "detail.history": {
     one: "Last {count} change",
@@ -203,6 +210,10 @@ export const en = {
   "form.descriptionCount": "{count} of 200",
   "form.location": "Location",
   "form.category": "Category",
+  "form.measure": "Measured by",
+  "form.measureCount": "Count",
+  "form.measureWeight": "Weight",
+  "form.measureHint": "Weight is for spices and anything else kept loose, in grams or kilos.",
   "form.unitName": "One of these is called a",
   "form.unitHint": "bag, roll, bottle, each",
   "form.hasPacks": "Sold in packs",
@@ -211,6 +222,7 @@ export const en = {
   "form.quantity": "On hand now",
   "form.threshold": "Warn when down to",
   "form.thresholdHint": "You'll be warned when {count} or fewer {unit} are left.",
+  "form.thresholdHintWeight": "You'll be warned when {amount} or less is left.",
   "form.photo": "Photo",
   "form.addPhoto": "Add photo",
   "form.changePhoto": "Change photo",

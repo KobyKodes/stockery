@@ -15,12 +15,15 @@ const optionalText = (max: number) =>
 
 const optionalId = z.string().min(1).nullable().optional();
 
+const measure = z.enum(["COUNT", "WEIGHT"]);
+
 export const itemInput = z
   .object({
     name: z.string().trim().min(1, msg("error.itemName")).max(80, msg("error.nameMax80")),
     description: optionalText(200),
     categoryId: optionalId,
     locationId: optionalId,
+    measure: measure.default("COUNT"),
     quantity: z.number().int(msg("error.quantityWhole")).min(0, msg("error.quantityNegative")),
     unitName: z.string().trim().min(1, msg("error.unitName")).max(30),
     packSize: z.number().int().min(2, msg("error.packMin")).nullable().optional(),
@@ -28,7 +31,7 @@ export const itemInput = z
     threshold: z.number().int(msg("error.thresholdWhole")).min(0, msg("error.thresholdNegative")),
   })
   .superRefine((v, ctx) => {
-    if (v.packSize && !v.packName) {
+    if (v.measure === "COUNT" && v.packSize && !v.packName) {
       ctx.addIssue({ code: "custom", path: ["packName"], message: msg("error.packName") });
     }
   });
@@ -40,6 +43,7 @@ export const itemPatch = z
     description: optionalText(200),
     categoryId: optionalId,
     locationId: optionalId,
+    measure,
     quantity: z.number().int().min(0, msg("error.quantityNegative")),
     unitName: z.string().trim().min(1).max(30),
     packSize: z.number().int().min(2, msg("error.packMin")).nullable(),
@@ -61,6 +65,10 @@ export type ListQuery = z.infer<typeof listQuery>;
 
 export const quantityBody = z.object({
   quantity: z.number().int(msg("error.whole")).min(1, msg("error.atLeastOne")),
+});
+
+export const orderedBody = z.object({
+  ordered: z.boolean(),
 });
 
 export const countBody = z.object({

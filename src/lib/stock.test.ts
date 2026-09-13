@@ -3,12 +3,15 @@ import {
   applyTake,
   canUndo,
   formatQuantity,
+  formatWeight,
   fromBaseUnits,
   pluralise,
+  quantityParts,
   stockBarFraction,
   stockStatus,
   suggestedReorderQty,
   toBaseUnits,
+  toGrams,
 } from "./stock";
 
 describe("stockStatus", () => {
@@ -142,5 +145,48 @@ describe("pluralise and formatQuantity outside English", () => {
   it("keeps pack wording unpluralised in Arabic", () => {
     const item = { quantity: 40, unitName: "كيس", packSize: 12, packName: "صندوق" };
     expect(formatQuantity(item, "ar")).toBe("3 صندوق + 4 كيس");
+  });
+});
+
+describe("weight", () => {
+  const cumin = { quantity: 1250, unitName: "g", packSize: null, packName: null, measure: "WEIGHT" as const };
+
+  it("shows grams under a kilo and kilograms from a kilo up", () => {
+    expect(formatWeight(0)).toBe("0 g");
+    expect(formatWeight(750)).toBe("750 g");
+    expect(formatWeight(1000)).toBe("1 kg");
+    expect(formatWeight(1250)).toBe("1.25 kg");
+    expect(formatWeight(12005)).toBe("12.005 kg");
+    expect(formatWeight(-1500)).toBe("-1.5 kg");
+  });
+
+  it("uses Arabic unit symbols in Arabic", () => {
+    expect(formatWeight(500, "ar")).toBe("500 غ");
+    expect(formatWeight(2000, "ar")).toBe("2 كغ");
+  });
+
+  it("formats a weighed item's quantity as a weight", () => {
+    expect(formatQuantity(cumin)).toBe("1.25 kg");
+    expect(formatQuantity({ ...cumin, quantity: 80 })).toBe("80 g");
+  });
+
+  it("converts grams and kilograms to whole grams", () => {
+    expect(toGrams(250, "g")).toBe(250);
+    expect(toGrams(1.5, "kg")).toBe(1500);
+    expect(toGrams(1.005, "kg")).toBe(1005);
+    expect(toGrams(0.4, "g")).toBe(0);
+    expect(toGrams(-2, "kg")).toBe(0);
+    expect(toGrams(NaN, "g")).toBe(0);
+  });
+
+  it("splits a quantity into number and word", () => {
+    expect(quantityParts(cumin, 1250)).toEqual({ quantity: "1.25", unit: "kg" });
+    expect(quantityParts(cumin, 40)).toEqual({ quantity: "40", unit: "g" });
+    expect(quantityParts({ unitName: "bottle" }, 3)).toEqual({ quantity: "3", unit: "bottles" });
+  });
+
+  it("never pluralises a gram symbol", () => {
+    expect(pluralise("g", 2)).toBe("g");
+    expect(pluralise("kg", 5)).toBe("kg");
   });
 });

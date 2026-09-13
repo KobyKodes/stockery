@@ -1,8 +1,9 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { WeightEntry } from "@/components/weight-entry";
 import { useI18n } from "@/lib/i18n/client";
-import { fromBaseUnits, pluralise, toBaseUnits } from "@/lib/stock";
+import { fromBaseUnits, pluralise, toBaseUnits, type Measure } from "@/lib/stock";
 
 type Props = {
   id: string;
@@ -11,13 +12,16 @@ type Props = {
   unitName: string;
   packSize: number | null;
   packName: string | null;
+  measure?: Measure;
   autoFocus?: boolean;
 };
 
 // Enter a quantity as packs + units when the item has packs, or as plain
-// units otherwise. The stored value is always base units.
-export function PackEntry({ id, value, onChange, unitName, packSize, packName, autoFocus }: Props) {
+// units otherwise, or as grams or kilograms for a weighed item. The stored
+// value is always base units (grams, for weight).
+export function PackEntry({ id, value, onChange, unitName, packSize, packName, measure, autoFocus }: Props) {
   const { locale, t } = useI18n();
+  if (measure === "WEIGHT") return <WeightEntry id={id} value={value} onChange={onChange} autoFocus={autoFocus} />;
   const hasPacks = !!packSize && packSize > 1 && !!packName;
 
   if (!hasPacks) {

@@ -13,9 +13,15 @@ export const PATCH = handle<Ctx>(async (request, { params }) => {
   return NextResponse.json({ entries: await listReorder() });
 });
 
-// Removing by hand keeps the item's stock untouched.
+// Removing by hand keeps the item's stock untouched. A row that was added by
+// hand also takes away the ordered mark that adding it set.
 export const DELETE = handle<Ctx>(async (_request, { params }) => {
   const { id } = await params;
-  await prisma.reorderEntry.delete({ where: { id } });
+  await prisma.$transaction(async (tx) => {
+    const entry = await tx.reorderEntry.delete({ where: { id } });
+    if (!entry.addedAuto) {
+      await tx.item.update({ where: { id: entry.itemId }, data: { orderedAt: null } });
+    }
+  });
   return NextResponse.json({ entries: await listReorder() });
 });

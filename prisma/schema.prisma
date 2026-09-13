@@ -43,11 +43,16 @@ model Item {
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   location    Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
+  measure   Measure @default(COUNT) // WEIGHT: quantity and threshold are grams, no packs
   quantity  Int     @default(0) // always in base units, never negative
   unitName  String  @default("each") // "bag", "roll", "bottle", "each"
   packSize  Int? // e.g. 12 if a case holds 12; null = no packs
   packName  String? // "case", "box", "sleeve"
   threshold Int     @default(0) // low when quantity <= threshold (base units)
+
+  // Set when more is on the way: marked in the storeroom, or added to the
+  // reorder list by hand. Cleared when stock is received.
+  orderedAt DateTime?
 
   image     Bytes?
   imageType String? // "image/jpeg"
@@ -62,6 +67,13 @@ model Item {
 
   @@index([locationId, sortOrder])
   @@index([categoryId])
+}
+
+/// How an item is measured. Counted items use their own unit name and packs;
+/// weighed items (spices, anything sold loose) are held in whole grams.
+enum Measure {
+  COUNT
+  WEIGHT
 }
 
 /// Every change to quantity is a movement. Needed for undo, for "received"

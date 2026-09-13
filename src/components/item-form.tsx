@@ -24,7 +24,8 @@ import { api } from "@/lib/fetcher";
 import { useI18n } from "@/lib/i18n/client";
 import { itemImageUrl, resizeImage } from "@/lib/image";
 import type { ItemRow } from "@/lib/item-view";
-import { pluralise } from "@/lib/stock";
+import { formatWeight, pluralise, type Measure } from "@/lib/stock";
+import { cn } from "@/lib/utils";
 
 type Props = {
   item?: ItemRow;
@@ -37,6 +38,7 @@ type FormState = {
   description: string;
   categoryId: string | null;
   locationId: string | null;
+  measure: Measure;
   unitName: string;
   hasPacks: boolean;
   packName: string;
@@ -51,6 +53,7 @@ function initial(item: ItemRow | undefined, defaultUnit: string, defaultPack: st
     description: item?.description ?? "",
     categoryId: item?.category?.id ?? null,
     locationId: item?.location?.id ?? null,
+    measure: item?.measure ?? "COUNT",
     unitName: item?.unitName ?? defaultUnit,
     hasPacks: !!item?.packSize,
     packName: item?.packName ?? defaultPack,
@@ -61,7 +64,8 @@ function initial(item: ItemRow | undefined, defaultUnit: string, defaultPack: st
 }
 
 // One form for create and edit. Quantities are entered as packs + units when
-// the item is sold in packs; the request always carries base units.
+// the item is sold in packs, or in grams or kilograms when it is weighed; the
+// request always carries base units (grams, for a weighed item).
 export function ItemForm({ item, categories: initialCategories, locations: initialLocations }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -82,8 +86,9 @@ export function ItemForm({ item, categories: initialCategories, locations: initi
   const fileRef = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
-  const packSize = form.hasPacks ? form.packSize : null;
-  const packName = form.hasPacks ? form.packName : null;
+  const weighed = form.measure === "WEIGHT";
+  const packSize = form.hasPacks && !weighed ? form.packSize : null;
+  const packName = form.hasPacks && !weighed ? form.packName : null;
 
   async function choosePhoto(file: File | undefined) {
     if (!file) return;
@@ -111,7 +116,8 @@ export function ItemForm({ item, categories: initialCategories, locations: initi
       description: form.description,
       categoryId: form.categoryId,
       locationId: form.locationId,
-      unitName: form.unitName,
+      measure: form.measure,
+      unitName: weighed ? "g" : form.unitName,
       packSize,
       packName,
       quantity: form.quantity,
@@ -201,45 +207,69 @@ export function ItemForm({ item, categories: initialCategories, locations: initi
         </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="unitName">{t("form.unitName")}</Label>
-        <Input id="unitName" className="w-48" maxLength={30} value={form.unitName} onChange={(e) => set("unitName", e.target.value)} />
-        <p className="text-xs text-stencil-muted">{t("form.unitHint")}</p>
+      <div className="flex flex-col gap-2">
+        <span id="measure-label" className="text-xs font-semibold">
+          {t("form.measure")}
+        </span>
+        <div role="group" aria-labelledby="measure-label" className="flex h-tap w-fit rounded-control border border-stencil">
+          {(["COUNT", "WEIGHT"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={form.measure === m}
+              onClick={() => set("measure", m)}
+              className={cn("px-4 text-base font-semibold", form.measure === m ? "bg-stencil text-paper" : "text-stencil")}
+            >
+              {m === "COUNT" ? t("form.measureCount") : t("form.measureWeight")}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-stencil-muted">{t("form.measureHint")}</p>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <Label htmlFor="hasPacks" className="cursor-pointer">
-          <Switch id="hasPacks" checked={form.hasPacks} onCheckedChange={(v) => set("hasPacks", v)} />
-          {t("form.hasPacks")}
-        </Label>
-        {form.hasPacks ? (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="packName">{t("form.packName")}</Label>
-              <Input id="packName" className="w-36" maxLength={30} value={form.packName} onChange={(e) => set("packName", e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="packSize">
-                {t("form.packSize", {
-                  unit: pluralise(form.unitName || t("form.unitFallback"), 2, locale),
-                  pack: form.packName || t("form.packFallback"),
-                })}
-              </Label>
-              <Input
-                id="packSize"
-                type="number"
-                inputMode="numeric"
-                min={2}
-                step={1}
-                className="w-28"
-                value={form.packSize}
-                onChange={(e) => set("packSize", Math.max(0, Math.floor(Number(e.target.value))))}
-                onFocus={(e) => e.currentTarget.select()}
-              />
-            </div>
+      {weighed ? null : (
+        <>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="unitName">{t("form.unitName")}</Label>
+            <Input id="unitName" className="w-48" maxLength={30} value={form.unitName} onChange={(e) => set("unitName", e.target.value)} />
+            <p className="text-xs text-stencil-muted">{t("form.unitHint")}</p>
           </div>
-        ) : null}
-      </div>
+
+          <div className="flex flex-col gap-3">
+            <Label htmlFor="hasPacks" className="cursor-pointer">
+              <Switch id="hasPacks" checked={form.hasPacks} onCheckedChange={(v) => set("hasPacks", v)} />
+              {t("form.hasPacks")}
+            </Label>
+            {form.hasPacks ? (
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="packName">{t("form.packName")}</Label>
+                  <Input id="packName" className="w-36" maxLength={30} value={form.packName} onChange={(e) => set("packName", e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="packSize">
+                    {t("form.packSize", {
+                      unit: pluralise(form.unitName || t("form.unitFallback"), 2, locale),
+                      pack: form.packName || t("form.packFallback"),
+                    })}
+                  </Label>
+                  <Input
+                    id="packSize"
+                    type="number"
+                    inputMode="numeric"
+                    min={2}
+                    step={1}
+                    className="w-28"
+                    value={form.packSize}
+                    onChange={(e) => set("packSize", Math.max(0, Math.floor(Number(e.target.value))))}
+                    onFocus={(e) => e.currentTarget.select()}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-1">
         <Label htmlFor="quantity">{t("form.quantity")}</Label>
@@ -250,6 +280,7 @@ export function ItemForm({ item, categories: initialCategories, locations: initi
           unitName={form.unitName || t("form.unitFallback")}
           packSize={packSize}
           packName={packName}
+          measure={form.measure}
         />
       </div>
 
@@ -262,12 +293,15 @@ export function ItemForm({ item, categories: initialCategories, locations: initi
           unitName={form.unitName || t("form.unitFallback")}
           packSize={packSize}
           packName={packName}
+          measure={form.measure}
         />
         <p className="text-xs text-stencil-muted">
-          {t("form.thresholdHint", {
-            count: form.threshold,
-            unit: pluralise(form.unitName || t("form.unitFallback"), form.threshold === 1 ? 1 : 2, locale),
-          })}
+          {weighed
+            ? t("form.thresholdHintWeight", { amount: formatWeight(form.threshold, locale) })
+            : t("form.thresholdHint", {
+                count: form.threshold,
+                unit: pluralise(form.unitName || t("form.unitFallback"), form.threshold === 1 ? 1 : 2, locale),
+              })}
         </p>
       </div>
 

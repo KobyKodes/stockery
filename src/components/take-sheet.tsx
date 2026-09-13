@@ -2,7 +2,7 @@
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
-import { StockPanel } from "@/components/stock-panel";
+import { StockPanel, type StockMode } from "@/components/stock-panel";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 import type { ItemRow } from "@/lib/item-view";
@@ -10,13 +10,15 @@ import type { ItemRow } from "@/lib/item-view";
 type Props = {
   item: ItemRow | null;
   presets: number[];
+  /** The tab it opens on: − on a row opens Take, + opens Receive. */
+  mode?: StockMode;
   onOpenChange: (open: boolean) => void;
   onChange: (item: ItemRow) => void;
 };
 
 // Bottom sheet on phones, right-side panel on desktop. Focus is trapped
 // inside; Escape closes. It stays open after a take so the next one is a tap.
-export function TakeSheet({ item, presets, onOpenChange, onChange }: Props) {
+export function TakeSheet({ item, presets, mode = "take", onOpenChange, onChange }: Props) {
   const t = useT();
   return (
     <DialogPrimitive.Root open={item !== null} onOpenChange={onOpenChange}>
@@ -35,7 +37,7 @@ export function TakeSheet({ item, presets, onOpenChange, onChange }: Props) {
               <span className="sr-only">{t("common.close")}</span>
             </DialogPrimitive.Close>
           </div>
-          {item ? <StockPanel key={item.id} item={item} presets={presets} onChange={onChange} className="mt-2" /> : null}
+          {item ? <StockPanel key={`${item.id}-${mode}`} item={item} presets={presets} mode={mode} onChange={onChange} className="mt-2" /> : null}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

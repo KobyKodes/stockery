@@ -7,6 +7,8 @@ type Props = {
   /** Start here on mount and roll to `value` once (the low-stock count-up). */
   from?: number;
   className?: string;
+  /** Write the rolling integer another way, e.g. grams as "1.25" kg. */
+  format?: (n: number) => string;
 };
 
 function rollDuration(): number {
@@ -18,7 +20,7 @@ function rollDuration(): number {
 
 // A number that rolls to its new value after a change. Reads --duration-roll
 // so prefers-reduced-motion (which zeroes it) makes the change instant.
-export function RollingNumber({ value, from, className }: Props) {
+export function RollingNumber({ value, from, className, format }: Props) {
   const [shown, setShown] = useState(from ?? value);
   const shownRef = useRef(shown);
   const frame = useRef<number | null>(null);
@@ -44,5 +46,5 @@ export function RollingNumber({ value, from, className }: Props) {
     };
   }, [value]);
 
-  return <span className={className}>{shown.toLocaleString("en-GB")}</span>;
+  return <span className={className}>{format ? format(shown) : shown.toLocaleString("en-GB")}</span>;
 }

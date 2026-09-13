@@ -5,11 +5,14 @@ import type { Locale } from "@/lib/i18n/config";
 export type StockStatus = "ok" | "low" | "out";
 
 export type StockFields = { quantity: number; threshold: number };
+export type Measure = "COUNT" | "WEIGHT";
+
 export type PackFields = {
   quantity: number;
   unitName: string;
   packSize: number | null;
   packName: string | null;
+  measure?: Measure;
 };
 
 /** out when nothing is left, low at or under the threshold, otherwise ok. */
@@ -26,7 +29,7 @@ export function stockStatus(item: StockFields): StockStatus {
  * English rules only apply while the app is in English. In any other language
  * the word is left exactly as it was entered.
  */
-const UNCOUNTABLE = new Set(["each", "pair", "stock"]);
+const UNCOUNTABLE = new Set(["each", "pair", "stock", "g", "kg"]);
 
 export function pluralise(word: string, n: number, locale: Locale = "en"): string {
   if (locale !== "en") return word;
@@ -39,6 +42,7 @@ export function pluralise(word: string, n: number, locale: Locale = "en"): strin
 /** "3 cases + 4 bags" for packSize 12, quantity 40. "40 bags" without packs. */
 export function formatQuantity(item: PackFields, locale: Locale = "en"): string {
   const { quantity, unitName, packSize, packName } = item;
+  if (item.measure === "WEIGHT") return formatWeight(quantity, locale);
   if (!packSize || packSize <= 1 || !packName) {
     return `${quantity} ${pluralise(unitName, quantity, locale)}`;
   }
@@ -48,6 +52,22 @@ export function formatQuantity(item: PackFields, locale: Locale = "en"): string 
   const packPart = `${packs} ${pluralise(packName, packs, locale)}`;
   if (units === 0) return packPart;
   return `${packPart} + ${units} ${pluralise(unitName, units, locale)}`;
+}
+
+/**
+ * A count and its word, ready for "{quantity} {unit}" copy: "3" and "bottles",
+ * or for a weighed item "1.25" and "kg".
+ */
+export function quantityParts(
+  item: Pick<PackFields, "unitName" | "measure">,
+  n: number,
+  locale: Locale = "en",
+): { quantity: string; unit: string } {
+  if (item.measure === "WEIGHT") {
+    const unit = weightUnitFor(n);
+    return { quantity: formatWeightValue(n, unit), unit: weightSymbol(unit, locale) };
+  }
+  return { quantity: String(n), unit: pluralise(item.unitName, n, locale) };
 }
 
 /** Convert an entry of {packs, units} to base units. */
@@ -91,4 +111,43 @@ export function canUndo(movement: { createdAt: Date; type: string }, isLatest: b
   if (!isLatest) return false;
   if (movement.type === "ADJUST") return false;
   return now.getTime() - movement.createdAt.getTime() <= UNDO_WINDOW_MS;
+}
+
+// Weight. A weighed item keeps its quantity in whole grams; these helpers show
+// it in grams under a kilo and in kilograms from a kilo up.
+
+export type WeightUnit = "g" | "kg";
+
+// Unit symbols rather than words, so they sit beside a numeral like a label on
+// a scale. Digits stay Western in both languages, as they do everywhere else.
+const WEIGHT_SYMBOLS: Record<Locale, Record<WeightUnit, string>> = {
+  en: { g: "g", kg: "kg" },
+  ar: { g: "غ", kg: "كغ" },
+};
+
+export function weightSymbol(unit: WeightUnit, locale: Locale = "en"): string {
+  return WEIGHT_SYMBOLS[locale][unit];
+}
+
+/** Kilograms from a kilo up, grams under it. */
+export function weightUnitFor(grams: number): WeightUnit {
+  return Math.abs(grams) >= 1000 ? "kg" : "g";
+}
+
+/** The number alone in the given unit: 1250 g in kg is "1.25", 50 g in g is "50". */
+export function formatWeightValue(grams: number, unit: WeightUnit): string {
+  const n = unit === "kg" ? grams / 1000 : grams;
+  return n.toLocaleString("en-GB", { maximumFractionDigits: unit === "kg" ? 3 : 0 });
+}
+
+/** "750 g", "1.25 kg". */
+export function formatWeight(grams: number, locale: Locale = "en"): string {
+  const unit = weightUnitFor(grams);
+  return `${formatWeightValue(grams, unit)} ${weightSymbol(unit, locale)}`;
+}
+
+/** An entry in grams or kilograms as whole grams: 1.5 kg is 1500. Negatives and NaN are 0. */
+export function toGrams(value: number, unit: WeightUnit): number {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.round(unit === "kg" ? value * 1000 : value);
 }

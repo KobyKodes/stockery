@@ -7,7 +7,7 @@ Direction: **Receiving Dock**. The storeroom is a small warehouse, so the app bo
 - **One type family, two widths.** Barlow (body) and Barlow Condensed (display) are the same family, so the page reads as one voice. The condensed cut is only used where size does the work: the wordmark, headings, and every quantity numeral.
 - **One memorable element.** The quantity numeral is the only bold thing on any screen: 44px in a row, 72px in the take sheet. No hero, no gradient, no illustration, no decorative type.
 - **Borders encode information.** A 3px stencil rule means "new shelf" and sits above every location group. A 1px rule separates rows. Nothing else has a border. There are no card outlines.
-- **No numbered markers.** The full count is the only real sequence in the app and it shows progress as "12 of 42", not as step badges.
+- **No numbered markers.** The full count is the only real sequence in the app, and it shows progress as a running "N items changed", not as step badges.
 - **Motion answers the user.** The numeral rolls after a take, the row flashes after a change, the sheet slides up when opened. The only page-load motion is the low-stock strip counting up once. `prefers-reduced-motion` zeroes every duration.
 - **Sentence case everywhere**, except the two agreed uppercase uses below. No tracked-out eyebrow labels, no uppercase buttons or form labels.
 - **Tabular figures, not monospace.** Every numeric cell sets `font-variant-numeric: tabular-nums` so columns align without a monospace face.
@@ -141,7 +141,7 @@ The numeral is 72px Barlow Condensed and is the only large thing in the sheet. P
 
 ### Full count
 
-Same anatomy one item at a time on phone (name, thumbnail, last count, one large field, Skip and Next), stacked as a vertical list on desktop. Header reads "12 of 42" and the current location name.
+The whole walk is one list on every screen, grouped by location in walk order under the same sticky uppercase headings as the storeroom. On a phone each row stacks the name, thumbnail and last count over one large field in the display face; a row whose value differs from the last count says "Changed" in steel. Finish count stays pinned above the tab bar with the number of changed items beside it. On desktop the fields sit in a fixed-width column so they line up down the page, and Finish sits at the end of the list.
 
 ## Principles
 

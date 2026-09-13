@@ -15,7 +15,7 @@ import { api } from "@/lib/fetcher";
 import { useI18n } from "@/lib/i18n/client";
 import type { ItemRow } from "@/lib/item-view";
 import { asPlainText, orderAmount, type ReorderRow } from "@/lib/reorder-view";
-import { pluralise } from "@/lib/stock";
+import { quantityParts } from "@/lib/stock";
 
 type Props = {
   entries: ReorderRow[];
@@ -110,13 +110,8 @@ export function ReorderList({ entries: initial, addable }: Props) {
         method: "POST",
       });
       setEntries(result.entries);
-      toast(
-        t("reorder.receivedToast", {
-          count: result.applied,
-          unit: pluralise(row.item.unitName, result.applied, locale),
-          name: row.item.name,
-        }),
-      );
+      const { quantity: count, unit } = quantityParts(row.item, result.applied, locale);
+      toast(t("reorder.receivedToast", { count, unit, name: row.item.name }));
       router.refresh();
     } catch (e) {
       fail(e, t("reorder.deliveryFailed"));
@@ -264,10 +259,7 @@ function Row({
               <bdi>{item.name}</bdi>
             </Link>
             <p className="truncate text-xs text-stencil-muted">
-              {t("reorder.leftCount", {
-                quantity: item.quantity,
-                unit: pluralise(item.unitName, item.quantity, locale),
-              })}
+              {t("reorder.leftCount", quantityParts(item, item.quantity, locale))}
               {row.addedAuto ? "" : t("reorder.addedByHand")}
             </p>
             {/* On a phone there is no room beside the field, so the pack

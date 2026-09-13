@@ -10,7 +10,9 @@ export const GET = handle(async () => {
   return NextResponse.json({ entries: await listReorder() });
 });
 
-// Adding by hand marks the entry manual, so it is never cleared automatically.
+// Adding by hand marks the entry manual, so it is never cleared automatically,
+// and marks the item as ordered in the storeroom. The row stays on this list
+// until the delivery is received.
 export const POST = handle(async (request) => {
   const { itemId, requestedQty } = await parseBody(request, reorderAddBody);
   const item = await prisma.item.findUnique({
@@ -20,8 +22,11 @@ export const POST = handle(async (request) => {
   if (!item) throw new ApiError(404, msg("error.itemMissing"));
   if (item.reorder) throw new ApiError(409, msg("error.alreadyOnList"));
 
-  await prisma.reorderEntry.create({
-    data: { itemId, requestedQty: requestedQty ?? suggestedReorderQty(item), addedAuto: false },
-  });
+  await prisma.$transaction([
+    prisma.reorderEntry.create({
+      data: { itemId, requestedQty: requestedQty ?? suggestedReorderQty(item), addedAuto: false },
+    }),
+    prisma.item.update({ where: { id: itemId }, data: { orderedAt: new Date() } }),
+  ]);
   return NextResponse.json({ entries: await listReorder() }, { status: 201 });
 });
